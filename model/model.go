@@ -157,7 +157,7 @@ func (b *Board) Assert(i CellIndex, value int, reason string) {
 
 		for _, g := range cell.Groups {
 			for _, c := range g.Cells {
-				if c.BoardIndex != i.BoardIndex() {
+				if c.BoardIndex != i.BoardIndex() && c.ValueStates[value] == MAYBE {
 					x := c.Index()
 					b.queue = append(b.queue, func() {
 						b.Reject(x, value, fmt.Sprintf("excluded by assertion of %d @ %s", value+1, i))
@@ -248,8 +248,12 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 									x := c1.Index()
 									if c1.BoardIndex != c.BoardIndex && c1.BoardIndex != cell.BoardIndex {
 										b.queue = append(b.queue, func() {
-											b.Reject(x, pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
-											b.Reject(x, pair[1], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
+											if c1.ValueStates[pair[0]] == MAYBE {
+												b.Reject(x, pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
+											}
+											if c1.ValueStates[pair[1]] == MAYBE {
+												b.Reject(x, pair[1], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
+											}
 										})
 									}
 								}
