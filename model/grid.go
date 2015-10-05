@@ -145,10 +145,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		} else if cell.Maybes == 2 {
 			gd.Enqueue(DEFERRED, gd.heuristicExcludePairs(cell))
 		} else if cell.Maybes == 3 {
-			gd.Enqueue(DEFERRED, func() {
-				// TODO: add support for processing triples.
-				fmt.Fprintf(LogFile, "info: triple found at %s - %03x\n", cell.Index(), cell.Bits)
-			})
+			gd.Enqueue(DEFERRED, gd.heuristicExcludeTriples(cell))
 		}
 	case YES:
 		if value == *cell.Value {

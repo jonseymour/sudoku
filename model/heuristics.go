@@ -79,3 +79,54 @@ func (gd *Grid) heuristicExcludePairs(cell *Cell) func() {
 		}
 	}
 }
+
+func (gd *Grid) heuristicExcludeTriple(t1 *Cell, t2 *Cell, t3 *Cell, exclude *Cell, triple []int) func() {
+	return func() {
+		if exclude.ValueStates[triple[0]] == MAYBE {
+			gd.Reject(exclude.Index(), triple[0], fmt.Sprintf("excluded by triple (%v,%v,%v) @ %s, %s, %s", triple[0], triple[1], triple[2], t1.Index(), t2.Index(), t3.Index()))
+		}
+		if exclude.ValueStates[triple[1]] == MAYBE {
+			gd.Reject(exclude.Index(), triple[1], fmt.Sprintf("excluded by triple (%v,%v,%v) @ %s, %s, %s", triple[0], triple[1], triple[2], t1.Index(), t2.Index(), t3.Index()))
+		}
+		if exclude.ValueStates[triple[2]] == MAYBE {
+			gd.Reject(exclude.Index(), triple[2], fmt.Sprintf("excluded by triple (%v,%v,%v) @ %s, %s, %s", triple[0], triple[1], triple[2], t1.Index(), t2.Index(), t3.Index()))
+		}
+	}
+}
+
+func (gd *Grid) heuristicExcludeTriples(cell *Cell) func() {
+	return func() {
+		if cell.Maybes == 3 {
+			triple := []int{}
+			for v, s := range cell.ValueStates {
+				if s == MAYBE {
+					triple = append(triple, v)
+				}
+			}
+			if len(triple) != 3 {
+				panic("expected: len(triple) == 3")
+			}
+			for _, g := range cell.Groups {
+				tripleIndex := []int{cell.GridIndex}
+				for _, c := range g.Cells {
+					if c.GridIndex != cell.GridIndex &&
+						c.Value == nil &&
+						(c.Bits&^cell.Bits) == 0 {
+						tripleIndex = append(tripleIndex, c.GridIndex)
+						// found a matching pair in the same group
+					}
+				}
+				if len(tripleIndex) == 3 {
+					a := tripleIndex[0]
+					b := tripleIndex[1]
+					c := tripleIndex[2]
+					for _, t1 := range g.Cells {
+						if (t1.GridIndex != a) && (t1.GridIndex != b) && (t1.GridIndex != c) {
+							gd.Enqueue(IMMEDIATE, gd.heuristicExcludeTriple(gd.Cells[a], gd.Cells[b], gd.Cells[c], t1, triple))
+						}
+					}
+				}
+			}
+		}
+	}
+}
