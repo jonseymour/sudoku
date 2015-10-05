@@ -98,10 +98,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 		for _, g := range cell.Groups {
 			for _, c := range g.Cells {
 				if c.GridIndex != i.GridIndex() && c.ValueStates[value] == MAYBE {
-					x := c.Index()
-					gd.Enqueue(IMMEDIATE, func() {
-						gd.Reject(x, value, fmt.Sprintf("excluded by assertion of %d @ %s", value+1, i))
-					})
+					gd.Enqueue(IMMEDIATE, gd.heuristicExcludeNeighbours(i, c.Index(), value))
 				}
 			}
 		}
@@ -114,14 +111,8 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 
 func (gd *Grid) processUnique(g *Group, value int) {
 	for _, c := range g.Cells {
-		x := c.Index()
-		cell := c
 		if c.ValueStates[value] == MAYBE {
-			gd.Enqueue(IMMEDIATE, func() {
-				if cell.ValueStates[value] == MAYBE {
-					gd.Assert(x, value, fmt.Sprintf("unique value found in group %s", g))
-				}
-			})
+			gd.Enqueue(IMMEDIATE, gd.heuristicUniqueInGroup(g, c, value))
 		}
 	}
 }
@@ -144,66 +135,12 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		}
 
 		if cell.Maybes == 1 {
-			// if a cell has only one maybe, then we assert that value
-			// as the cell's value
-
-			gd.Enqueue(IMMEDIATE, func() {
-				for v, s := range cell.ValueStates {
-					if s == MAYBE {
-						x := cell.Index()
-						gd.Enqueue(IMMEDIATE, func() {
-							gd.Assert(x, v, "only possible value in cell")
-						})
-						return
-					}
-				}
-
-			})
+			gd.Enqueue(IMMEDIATE, gd.heuristicOnlyPossibleValue(cell))
 		} else if cell.Maybes == 2 {
-
-			// if a cell can only contain one value in a pair,
-			// then check if there is another cell restricted
-			// to the same pair in the same group
-			//
-			// if so, reject the pair values from every other cell
-			// in the same group
-			//
-
-			gd.Enqueue(DEFERRED, func() {
-				if cell.Maybes == 2 {
-					pair := []int{}
-					for v, s := range cell.ValueStates {
-						if s == MAYBE {
-							pair = append(pair, v)
-						}
-					}
-					if len(pair) != 2 {
-						panic("expected: len(pair) == 2")
-					}
-					for _, g := range cell.Groups {
-						for _, c := range g.Cells {
-							if c.GridIndex != cell.GridIndex && c.Bits == cell.Bits {
-								// found a matching pair in the same group
-								for _, c1 := range g.Cells {
-									x := c1.Index()
-									if c1.GridIndex != c.GridIndex && c1.GridIndex != cell.GridIndex {
-										gd.Enqueue(IMMEDIATE, func() {
-											if c1.ValueStates[pair[0]] == MAYBE {
-												gd.Reject(x, pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
-											}
-											if c1.ValueStates[pair[1]] == MAYBE {
-												gd.Reject(x, pair[1], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
-											}
-										})
-									}
-								}
-							}
-						}
-					}
-				}
-			})
+			gd.Enqueue(DEFERRED, gd.heuristicExcludePairs(cell))
 		} else if cell.Maybes == 3 {
 			gd.Enqueue(DEFERRED, func() {
+				// TODO: add support for processing triples.
 				fmt.Fprintf(LogFile, "info: triple found at %s - %03x\n", cell.Index(), cell.Bits)
 			})
 		}
