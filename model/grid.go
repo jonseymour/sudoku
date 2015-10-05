@@ -11,17 +11,27 @@ const (
 	DEFERRED
 )
 
+const (
+	NUM_VALUES      = 9
+	GROUP_SIZE      = 9
+	NUM_CELLS       = 81
+	NUM_GROUP_TYPES = 3
+	NUM_GROUPS      = 27
+	NUM_PRIORITIES  = 2
+	MIN_CLUES       = 17
+)
+
 type Grid struct {
-	Groups [27]*Group
-	Cells  [81]*Cell
+	Groups [NUM_GROUPS]*Group
+	Cells  [NUM_CELLS]*Cell
 
 	clues int
-	queue [2][]func()
+	queue [NUM_PRIORITIES][]func()
 }
 
 func NewGrid() *Grid {
 	grid := &Grid{
-		queue: [2][]func(){
+		queue: [NUM_PRIORITIES][]func(){
 			[]func(){},
 			[]func(){},
 		},
@@ -30,25 +40,25 @@ func NewGrid() *Grid {
 		g := &Group{}
 		grid.Groups[x] = g
 		for i, _ := range g.Counts {
-			g.Counts[i] = 9
-			if x < 9 {
+			g.Counts[i] = GROUP_SIZE
+			if x < GROUP_SIZE {
 				g.Name = fmt.Sprintf("Row:%d", x+1)
-			} else if x < 18 {
-				g.Name = fmt.Sprintf("Column:%d", x-9+1)
+			} else if x < 2*GROUP_SIZE {
+				g.Name = fmt.Sprintf("Column:%d", x-GROUP_SIZE+1)
 			} else {
-				g.Name = fmt.Sprintf("Block:%d", x-18+1)
+				g.Name = fmt.Sprintf("Block:%d", x-(2*GROUP_SIZE)+1)
 			}
 		}
 	}
-	for r := 0; r < 9; r++ {
-		for c := 0; c < 9; c++ {
+	for r := 0; r < GROUP_SIZE; r++ {
+		for c := 0; c < GROUP_SIZE; c++ {
 			i := &CellIndex{Row: r, Column: c}
 
 			cell := &Cell{}
 			grid.Cells[i.GridIndex()] = cell
-			cell.Bits = 1<<9 - 1
+			cell.Bits = 1<<GROUP_SIZE - 1
 			cell.GridIndex = i.GridIndex()
-			cell.Maybes = 9
+			cell.Maybes = GROUP_SIZE
 
 			cell.Groups[ROW] = grid.Groups[i.RowGroup()]
 			cell.Groups[COLUMN] = grid.Groups[i.ColumnGroup()]
@@ -153,19 +163,19 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 }
 
 func (gd *Grid) Solve() bool {
-	if gd.clues < 17 {
+	if gd.clues < MIN_CLUES {
 		panic(fmt.Sprintf("too few clues (%d) to solve", gd.clues))
 	}
 
 mainloop:
-	for gd.clues < 81 {
-		for len(gd.queue[0]) > 0 && gd.clues < 81 {
+	for gd.clues < NUM_CELLS {
+		for len(gd.queue[0]) > 0 && gd.clues < NUM_CELLS {
 			next := gd.queue[0][0]
 			gd.queue[0] = gd.queue[0][1:]
 			next()
 		}
 
-		if gd.clues < 81 {
+		if gd.clues < NUM_CELLS {
 
 			// still busy - look for some low priority things to do
 
@@ -180,5 +190,5 @@ mainloop:
 		}
 	}
 
-	return gd.clues == 81
+	return gd.clues == NUM_CELLS
 }
