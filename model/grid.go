@@ -145,7 +145,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		}
 
 		if cell.Maybes == 1 {
-			gd.Enqueue(IMMEDIATE, gd.heuristicOnlyPossibleValue(cell))
+			gd.Enqueue(IMMEDIATE, gd.heuristicExcludeSingleton(cell))
 		} else if cell.Maybes == 2 {
 			gd.Enqueue(DEFERRED, gd.heuristicExcludePairs(cell))
 		} else if cell.Maybes == 3 {

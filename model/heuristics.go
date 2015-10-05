@@ -25,7 +25,7 @@ func (gd *Grid) heuristicUniqueInGroup(g *Group, value int) func() {
 }
 
 // When the cell has only one possible value, find and assert that cell.
-func (gd *Grid) heuristicOnlyPossibleValue(cell *Cell) func() {
+func (gd *Grid) heuristicExcludeSingleton(cell *Cell) func() {
 	return func() {
 		for v, s := range cell.ValueStates {
 			if s == MAYBE {
