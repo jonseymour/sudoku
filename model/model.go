@@ -128,11 +128,11 @@ func NewBoard() *Board {
 }
 
 func (b *Board) Assert(i CellIndex, value int, reason string) {
-	fmt.Fprintf(LogFile, "assert: cell=%s, value=%d, reason=%s\n", i, value+1, reason)
+	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := b.Cells[i.BoardIndex()]
 	cell.Bits = 1 << uint(value)
 	if cell.Value != nil && *cell.Value != value {
-		panic(fmt.Errorf("contradictory assertion: already asserted %d for %s, now asserting %d", *cell.Value+1, i, value+1))
+		panic(fmt.Errorf("contradictory assertion: already asserted %d @ %s, now trying to assert %d", *cell.Value+1, i, value+1))
 	}
 	cell.Value = &value
 	switch cell.ValueStates[value] {
@@ -168,7 +168,7 @@ func (b *Board) Assert(i CellIndex, value int, reason string) {
 
 	case YES:
 	case NO:
-		panic(fmt.Errorf("contradiction: @ %v, value=%d, but previously rejected", i, value+1))
+		panic(fmt.Errorf("contradiction: attempted to assert %d @ %v, but this value was previously rejected", value+1, i))
 	}
 }
 
@@ -187,7 +187,7 @@ func (b *Board) processUnique(g *Group, value int) {
 }
 
 func (b *Board) Reject(i CellIndex, value int, reason string) {
-	fmt.Fprintf(LogFile, "reject: cell=%s, value=%d, reason=%s\n", i, value+1, reason)
+	fmt.Fprintf(LogFile, "reject: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := b.Cells[i.BoardIndex()]
 	switch cell.ValueStates[value] {
 	case MAYBE:
@@ -264,6 +264,9 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 			})
 		}
 	case YES:
+		if value == *cell.Value {
+			panic(fmt.Errorf("contradiction: attempt to reject value=%d @ %s, but this value was previously asserted", value+1, i))
+		}
 	case NO:
 	}
 }
