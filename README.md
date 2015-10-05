@@ -5,7 +5,10 @@ sudoku - a golang sudoku solver
 ./sudoku [--verbose]|[--version] < puzzle > solution
 
 #DESCRIPTION
-'sudoku' implements a command-line Sudoku solver.
+'sudoku' implements a heuristic-based command-line Sudoku solver.
+
+The solver does not currently implement a backtracking algorithm. Instead, in order
+to make progress, it applies heuristics in the same way that a human player would. As a result, there are some puzzles that the solver cannot currently solve.
 
 ##INPUT
 Puzzles formatted according to PUZZLE FORMAT are read from stdin.
@@ -53,6 +56,16 @@ When there is only one possible remaining cell for a given value in a given grou
 
 ##pair exclusion
 When a group contains two cells whose values are known to be restricted to a pair of values, then any other cell in the same group cannot hold either of the two values, so we reject such values in those cells.
+
+##triple exclusion
+When a group contains three cells whose values are known to be restricted to a triple of values, then any other cell in the same group cannot hold any of the three values, so we reject such values in those cells.
+
+##MISSING HEURISTICS
+
+The following heuristics are not currently implemented.
+
+##Single Dimensional Block Constraints
+If a block group contains 2 or 3 unsolved cells in the same row (column) and there are candidate values are constrained to be in that same row (column) group, then those values can be eliminated from the adjacent rows (columns) in the adjacent row (column) blocks.
 
 #BUILDING
 Install the golang tool chain for your host, then run:
