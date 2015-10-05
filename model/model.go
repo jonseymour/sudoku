@@ -38,7 +38,7 @@ type CellIndex struct {
 	Column int
 }
 
-func (i CellIndex) BoardIndex() int {
+func (i CellIndex) GridIndex() int {
 	return i.Row*9 + i.Column
 }
 
@@ -71,7 +71,7 @@ func (i CellIndex) String() string {
 }
 
 type Cell struct {
-	BoardIndex  int
+	GridIndex   int
 	Maybes      int
 	Bits        int
 	Value       *int
@@ -80,20 +80,20 @@ type Cell struct {
 }
 
 func (c *Cell) Index() CellIndex {
-	return CellIndex{Row: c.BoardIndex / 9, Column: c.BoardIndex % 9}
+	return CellIndex{Row: c.GridIndex / 9, Column: c.GridIndex % 9}
 }
 
-type Board struct {
+type Grid struct {
 	queue  []func()
 	Groups [27]*Group
 	Cells  [81]*Cell
 }
 
-func NewBoard() *Board {
-	board := &Board{}
-	for x, _ := range board.Groups {
+func NewGrid() *Grid {
+	grid := &Grid{}
+	for x, _ := range grid.Groups {
 		g := &Group{}
-		board.Groups[x] = g
+		grid.Groups[x] = g
 		for i, _ := range g.Counts {
 			g.Counts[i] = 9
 			if x < 9 {
@@ -110,26 +110,26 @@ func NewBoard() *Board {
 			i := &CellIndex{Row: r, Column: c}
 
 			cell := &Cell{}
-			board.Cells[i.BoardIndex()] = cell
+			grid.Cells[i.GridIndex()] = cell
 			cell.Bits = 1<<9 - 1
-			cell.BoardIndex = i.BoardIndex()
+			cell.GridIndex = i.GridIndex()
 			cell.Maybes = 9
 
-			cell.Groups[ROW] = board.Groups[i.RowGroup()]
-			cell.Groups[COLUMN] = board.Groups[i.ColumnGroup()]
-			cell.Groups[BLOCK] = board.Groups[i.BlockGroup()]
+			cell.Groups[ROW] = grid.Groups[i.RowGroup()]
+			cell.Groups[COLUMN] = grid.Groups[i.ColumnGroup()]
+			cell.Groups[BLOCK] = grid.Groups[i.BlockGroup()]
 
 			cell.Groups[ROW].Cells[i.RowIndex()] = cell
 			cell.Groups[COLUMN].Cells[i.ColumnIndex()] = cell
 			cell.Groups[BLOCK].Cells[i.BlockIndex()] = cell
 		}
 	}
-	return board
+	return grid
 }
 
-func (b *Board) Assert(i CellIndex, value int, reason string) {
+func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
-	cell := b.Cells[i.BoardIndex()]
+	cell := gd.Cells[i.GridIndex()]
 	cell.Bits = 1 << uint(value)
 	if cell.Value != nil && *cell.Value != value {
 		panic(fmt.Errorf("contradictory assertion: already asserted %d @ %s, now trying to assert %d", *cell.Value+1, i, value+1))
@@ -147,7 +147,7 @@ func (b *Board) Assert(i CellIndex, value int, reason string) {
 				for _, g := range cell.Groups {
 					g.Counts[v] -= 1
 					if g.Counts[v] == 1 {
-						b.processUnique(g, v)
+						gd.processUnique(g, v)
 					}
 				}
 			}
@@ -157,10 +157,10 @@ func (b *Board) Assert(i CellIndex, value int, reason string) {
 
 		for _, g := range cell.Groups {
 			for _, c := range g.Cells {
-				if c.BoardIndex != i.BoardIndex() && c.ValueStates[value] == MAYBE {
+				if c.GridIndex != i.GridIndex() && c.ValueStates[value] == MAYBE {
 					x := c.Index()
-					b.queue = append(b.queue, func() {
-						b.Reject(x, value, fmt.Sprintf("excluded by assertion of %d @ %s", value+1, i))
+					gd.queue = append(gd.queue, func() {
+						gd.Reject(x, value, fmt.Sprintf("excluded by assertion of %d @ %s", value+1, i))
 					})
 				}
 			}
@@ -172,23 +172,23 @@ func (b *Board) Assert(i CellIndex, value int, reason string) {
 	}
 }
 
-func (b *Board) processUnique(g *Group, value int) {
+func (gd *Grid) processUnique(g *Group, value int) {
 	for _, c := range g.Cells {
 		x := c.Index()
 		cell := c
 		if c.ValueStates[value] == MAYBE {
-			b.queue = append(b.queue, func() {
+			gd.queue = append(gd.queue, func() {
 				if cell.ValueStates[value] == MAYBE {
-					b.Assert(x, value, fmt.Sprintf("unique value found in group %s", g))
+					gd.Assert(x, value, fmt.Sprintf("unique value found in group %s", g))
 				}
 			})
 		}
 	}
 }
 
-func (b *Board) Reject(i CellIndex, value int, reason string) {
+func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "reject: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
-	cell := b.Cells[i.BoardIndex()]
+	cell := gd.Cells[i.GridIndex()]
 	switch cell.ValueStates[value] {
 	case MAYBE:
 		bit := 1 << uint(value)
@@ -199,7 +199,7 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 		for _, g := range cell.Groups {
 			g.Counts[value] -= 1
 			if g.Counts[value] == 1 {
-				b.processUnique(g, value)
+				gd.processUnique(g, value)
 			}
 		}
 
@@ -207,12 +207,12 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 			// if a cell has only one maybe, then we assert that value
 			// as the cell's value
 
-			b.queue = append(b.queue, func() {
+			gd.queue = append(gd.queue, func() {
 				for v, s := range cell.ValueStates {
 					if s == MAYBE {
 						x := cell.Index()
-						b.queue = append(b.queue, func() {
-							b.Assert(x, v, "only possible value in cell")
+						gd.queue = append(gd.queue, func() {
+							gd.Assert(x, v, "only possible value in cell")
 						})
 						return
 					}
@@ -229,7 +229,7 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 			// in the same group
 			//
 
-			b.queue = append(b.queue, func() {
+			gd.queue = append(gd.queue, func() {
 				if cell.Maybes == 2 {
 					pair := []int{}
 					for v, s := range cell.ValueStates {
@@ -242,17 +242,17 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 					}
 					for _, g := range cell.Groups {
 						for _, c := range g.Cells {
-							if c.BoardIndex != cell.BoardIndex && c.Bits == cell.Bits {
+							if c.GridIndex != cell.GridIndex && c.Bits == cell.Bits {
 								// found a matching pair in the same group
 								for _, c1 := range g.Cells {
 									x := c1.Index()
-									if c1.BoardIndex != c.BoardIndex && c1.BoardIndex != cell.BoardIndex {
-										b.queue = append(b.queue, func() {
+									if c1.GridIndex != c.GridIndex && c1.GridIndex != cell.GridIndex {
+										gd.queue = append(gd.queue, func() {
 											if c1.ValueStates[pair[0]] == MAYBE {
-												b.Reject(x, pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
+												gd.Reject(x, pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
 											}
 											if c1.ValueStates[pair[1]] == MAYBE {
-												b.Reject(x, pair[1], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
+												gd.Reject(x, pair[1], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
 											}
 										})
 									}
@@ -263,7 +263,7 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 				}
 			})
 		} else if cell.Maybes == 3 {
-			b.queue = append(b.queue, func() {
+			gd.queue = append(gd.queue, func() {
 				fmt.Fprintf(LogFile, "info: triple found at %s - %03x\n", cell.Index(), cell.Bits)
 			})
 		}
@@ -275,13 +275,13 @@ func (b *Board) Reject(i CellIndex, value int, reason string) {
 	}
 }
 
-func (b *Board) Solve() bool {
-	for len(b.queue) > 0 {
-		next := b.queue[0]
-		b.queue = b.queue[1:]
+func (gd *Grid) Solve() bool {
+	for len(gd.queue) > 0 {
+		next := gd.queue[0]
+		gd.queue = gd.queue[1:]
 		next()
 	}
-	for _, c := range b.Cells {
+	for _, c := range gd.Cells {
 		if c.Value == nil {
 			return false
 		}

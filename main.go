@@ -30,7 +30,7 @@ func main() {
 	br := bufio.NewReader(os.Stdin)
 	bw := bufio.NewWriter(os.Stdout)
 	for {
-		board := model.NewBoard()
+		grid := model.NewGrid()
 		for r := 0; r < 9; r++ {
 			if row, err := br.ReadString('\n'); err != nil {
 				if r != 0 {
@@ -54,17 +54,17 @@ func main() {
 						}
 						if v >= '1' && v <= '9' {
 							value := int(v - int32('1'))
-							board.Assert(model.CellIndex{Row: r, Column: c}, value, "problem initialization")
+							grid.Assert(model.CellIndex{Row: r, Column: c}, value, "problem initialization")
 						}
 					}
 				}
 			}
 		}
-		solved = board.Solve()
+		solved = grid.Solve()
 		for r := 0; r < 9; r++ {
 			for c := 0; c < 9; c++ {
 				x := r*9 + c
-				v := board.Cells[x].Value
+				v := grid.Cells[x].Value
 				if v == nil {
 					bw.WriteString(".")
 				} else {
