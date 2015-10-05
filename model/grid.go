@@ -4,16 +4,28 @@ import (
 	"fmt"
 )
 
+type Priority int
+
+const (
+	IMMEDIATE Priority = iota
+	DEFERRED
+)
+
 type Grid struct {
 	Groups [27]*Group
 	Cells  [81]*Cell
 
 	clues int
-	queue []func()
+	queue [2][]func()
 }
 
 func NewGrid() *Grid {
-	grid := &Grid{}
+	grid := &Grid{
+		queue: [2][]func(){
+			[]func(){},
+			[]func(){},
+		},
+	}
 	for x, _ := range grid.Groups {
 		g := &Group{}
 		grid.Groups[x] = g
@@ -50,6 +62,10 @@ func NewGrid() *Grid {
 	return grid
 }
 
+func (gd *Grid) Enqueue(p Priority, f func()) {
+	gd.queue[p] = append(gd.queue[p], f)
+}
+
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
@@ -83,7 +99,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 			for _, c := range g.Cells {
 				if c.GridIndex != i.GridIndex() && c.ValueStates[value] == MAYBE {
 					x := c.Index()
-					gd.queue = append(gd.queue, func() {
+					gd.Enqueue(IMMEDIATE, func() {
 						gd.Reject(x, value, fmt.Sprintf("excluded by assertion of %d @ %s", value+1, i))
 					})
 				}
@@ -101,7 +117,7 @@ func (gd *Grid) processUnique(g *Group, value int) {
 		x := c.Index()
 		cell := c
 		if c.ValueStates[value] == MAYBE {
-			gd.queue = append(gd.queue, func() {
+			gd.Enqueue(IMMEDIATE, func() {
 				if cell.ValueStates[value] == MAYBE {
 					gd.Assert(x, value, fmt.Sprintf("unique value found in group %s", g))
 				}
@@ -131,11 +147,11 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 			// if a cell has only one maybe, then we assert that value
 			// as the cell's value
 
-			gd.queue = append(gd.queue, func() {
+			gd.Enqueue(IMMEDIATE, func() {
 				for v, s := range cell.ValueStates {
 					if s == MAYBE {
 						x := cell.Index()
-						gd.queue = append(gd.queue, func() {
+						gd.Enqueue(IMMEDIATE, func() {
 							gd.Assert(x, v, "only possible value in cell")
 						})
 						return
@@ -153,7 +169,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 			// in the same group
 			//
 
-			gd.queue = append(gd.queue, func() {
+			gd.Enqueue(DEFERRED, func() {
 				if cell.Maybes == 2 {
 					pair := []int{}
 					for v, s := range cell.ValueStates {
@@ -171,7 +187,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 								for _, c1 := range g.Cells {
 									x := c1.Index()
 									if c1.GridIndex != c.GridIndex && c1.GridIndex != cell.GridIndex {
-										gd.queue = append(gd.queue, func() {
+										gd.Enqueue(IMMEDIATE, func() {
 											if c1.ValueStates[pair[0]] == MAYBE {
 												gd.Reject(x, pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], cell.Index(), c.Index()))
 											}
@@ -187,7 +203,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 				}
 			})
 		} else if cell.Maybes == 3 {
-			gd.queue = append(gd.queue, func() {
+			gd.Enqueue(DEFERRED, func() {
 				fmt.Fprintf(LogFile, "info: triple found at %s - %03x\n", cell.Index(), cell.Bits)
 			})
 		}
@@ -203,10 +219,29 @@ func (gd *Grid) Solve() bool {
 	if gd.clues < 17 {
 		panic(fmt.Sprintf("too few clues (%d) to solve", gd.clues))
 	}
-	for len(gd.queue) > 0 && gd.clues < 81 {
-		next := gd.queue[0]
-		gd.queue = gd.queue[1:]
-		next()
+
+mainloop:
+	for gd.clues < 81 {
+		for len(gd.queue[0]) > 0 && gd.clues < 81 {
+			next := gd.queue[0][0]
+			gd.queue[0] = gd.queue[0][1:]
+			next()
+		}
+
+		if gd.clues < 81 {
+
+			// still busy - look for some low priority things to do
+
+			for i, q := range gd.queue {
+				if len(q) > 0 {
+					gd.queue[0] = append(gd.queue[0], q[0])
+					gd.queue[i] = q[1:]
+					continue mainloop
+				}
+			}
+			break mainloop
+		}
 	}
+
 	return gd.clues == 81
 }
