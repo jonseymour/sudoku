@@ -94,8 +94,9 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 		// reduce the counts associated with the other values in
 		// the intersecting groups
 
+		cell.ValueStates[value] = YES
 		for v, _ := range cell.ValueStates {
-			if cell.ValueStates[v] == MAYBE && v != value {
+			if cell.ValueStates[v] == MAYBE {
 				cell.ValueStates[v] = NO
 				for _, g := range cell.Groups {
 					g.Counts[v] -= 1
@@ -105,11 +106,10 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 				}
 			}
 		}
-		cell.ValueStates[value] = YES
 
 		for _, g := range cell.Groups {
 			for _, c := range g.Cells {
-				if c.GridIndex != i.GridIndex() && c.ValueStates[value] == MAYBE {
+				if c.ValueStates[value] == MAYBE {
 					gd.Enqueue(IMMEDIATE, gd.heuristicExcludeNeighbours(i, c.Index(), value))
 				}
 			}
