@@ -29,9 +29,7 @@ func (gd *Grid) heuristicExcludeSingleton(cell *Cell) func() {
 	return func() {
 		for v, s := range cell.ValueStates {
 			if s == MAYBE {
-				gd.Enqueue(IMMEDIATE, func() {
-					gd.Assert(cell.Index(), v, "only possible value in cell")
-				})
+				gd.Assert(cell.Index(), v, "only possible value in cell")
 				return
 			}
 		}
