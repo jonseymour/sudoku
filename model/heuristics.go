@@ -14,9 +14,13 @@ func (gd *Grid) heuristicExcludeNeighbours(asserted CellIndex, neighbour CellInd
 // The cell is a candidate for being the only remaining member of the group
 // who can hold the value. Note: at the time it is registered, pending rejects
 // may still be in effect, so we need to check again when it executes to be sure.
-func (gd *Grid) heuristicUniqueInGroup(g *Group, cell *Cell, value int) func() {
+func (gd *Grid) heuristicUniqueInGroup(g *Group, value int) func() {
 	return func() {
-		gd.Assert(cell.Index(), value, fmt.Sprintf("unique value found in group %s", g))
+		for _, c := range g.Cells {
+			if c.ValueStates[value] == MAYBE {
+				gd.Assert(c.Index(), value, fmt.Sprintf("unique value found in group %s", g))
+			}
+		}
 	}
 }
 

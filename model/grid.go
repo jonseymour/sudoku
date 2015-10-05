@@ -104,7 +104,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 				for _, g := range cell.Groups {
 					g.Counts[v] -= 1
 					if g.Counts[v] == 1 {
-						gd.processUnique(g, v)
+						gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, v))
 					}
 				}
 			}
@@ -140,7 +140,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		for _, g := range cell.Groups {
 			g.Counts[value] -= 1
 			if g.Counts[value] == 1 {
-				gd.processUnique(g, value)
+				gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, value))
 			}
 		}
 
@@ -195,13 +195,4 @@ mainloop:
 	}
 
 	return gd.clues == NUM_CELLS
-}
-
-//
-func (gd *Grid) processUnique(g *Group, value int) {
-	for _, c := range g.Cells {
-		if c.ValueStates[value] == MAYBE {
-			gd.Enqueue(IMMEDIATE, gd.heuristicUniqueInGroup(g, c, value))
-		}
-	}
 }
