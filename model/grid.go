@@ -81,20 +81,23 @@ func (gd *Grid) Enqueue(p Priority, f func()) {
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
-	cell.Bits = 1 << uint(value)
 	if cell.Value != nil && *cell.Value != value {
 		panic(fmt.Errorf("contradictory assertion: already asserted %d @ %s, now trying to assert %d", *cell.Value+1, i, value+1))
 	}
-	cell.Value = &value
+
 	switch cell.ValueStates[value] {
 	case MAYBE:
-		gd.clues++
+		cell.ValueStates[value] = YES
+		cell.Value = &value
+		cell.Bits = 1 << uint(value)
 		cell.Maybes = 1
 
-		// reduce the counts associated with the other values in
-		// the intersecting groups
+		gd.clues++
 
-		cell.ValueStates[value] = YES
+		// available sllots for all maybes in newly asserted cell are
+		// reduced by one in each intersecting group update those totals
+		// now and schedule work if a unique value is found in one group
+
 		for v, _ := range cell.ValueStates {
 			if cell.ValueStates[v] == MAYBE {
 				cell.ValueStates[v] = NO
@@ -115,9 +118,10 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 			}
 		}
 
-	case YES:
 	case NO:
 		panic(fmt.Errorf("contradiction: attempted to assert %d @ %v, but this value was previously rejected", value+1, i))
+	case YES:
+		// do nothing
 	}
 }
 
@@ -152,6 +156,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 			panic(fmt.Errorf("contradiction: attempt to reject value=%d @ %s, but this value was previously asserted", value+1, i))
 		}
 	case NO:
+		// do nothing
 	}
 }
 
