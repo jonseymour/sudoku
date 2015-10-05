@@ -34,7 +34,7 @@ func main() {
 		for r := 0; r < 9; r++ {
 			if row, err := br.ReadString('\n'); err != nil {
 				if r != 0 {
-					fmt.Fprintf(os.Stderr, "read error: %v", err)
+					fmt.Fprintf(os.Stderr, "read error: %v\n", err)
 					os.Exit(2)
 				} else {
 					if solved {
@@ -46,6 +46,7 @@ func main() {
 			} else {
 				if len(row) < 9 {
 					fmt.Fprintf(os.Stderr, "invalid row\n")
+					os.Exit(2)
 				} else {
 					row = row[0:9]
 					for c, v := range row {
@@ -55,6 +56,9 @@ func main() {
 						if v >= '1' && v <= '9' {
 							value := int(v - int32('1'))
 							grid.Assert(model.CellIndex{Row: r, Column: c}, value, "problem initialization")
+						} else {
+							fmt.Fprintf(os.Stderr, "invalid cell value: %v\n", string(rune(v)))
+							os.Exit(2)
 						}
 					}
 				}
