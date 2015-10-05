@@ -5,9 +5,11 @@ import (
 )
 
 type Grid struct {
-	queue  []func()
 	Groups [27]*Group
 	Cells  [81]*Cell
+
+	clues int
+	queue []func()
 }
 
 func NewGrid() *Grid {
@@ -58,6 +60,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	cell.Value = &value
 	switch cell.ValueStates[value] {
 	case MAYBE:
+		gd.clues++
 		cell.Maybes = 1
 
 		// reduce the counts associated with the other values in
@@ -197,15 +200,13 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 }
 
 func (gd *Grid) Solve() bool {
-	for len(gd.queue) > 0 {
+	if gd.clues < 17 {
+		panic(fmt.Sprintf("too few clues (%d) to solve", gd.clues))
+	}
+	for len(gd.queue) > 0 && gd.clues < 81 {
 		next := gd.queue[0]
 		gd.queue = gd.queue[1:]
 		next()
 	}
-	for _, c := range gd.Cells {
-		if c.Value == nil {
-			return false
-		}
-	}
-	return true
+	return gd.clues == 81
 }
