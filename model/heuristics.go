@@ -16,9 +16,7 @@ func (gd *Grid) heuristicExcludeNeighbours(asserted CellIndex, neighbour CellInd
 // may still be in effect, so we need to check again when it executes to be sure.
 func (gd *Grid) heuristicUniqueInGroup(g *Group, cell *Cell, value int) func() {
 	return func() {
-		if cell.ValueStates[value] == MAYBE {
-			gd.Assert(cell.Index(), value, fmt.Sprintf("unique value found in group %s", g))
-		}
+		gd.Assert(cell.Index(), value, fmt.Sprintf("unique value found in group %s", g))
 	}
 }
 

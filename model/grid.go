@@ -76,8 +76,8 @@ func (gd *Grid) Enqueue(p Priority, f func()) {
 	gd.queue[p] = append(gd.queue[p], f)
 }
 
-// Assert that the grid contains the specified value and the specified index.
-// Reason contains an English language justification for the belief.
+// Assert that the grid contains the specified value at the specified index.
+// 'reason' contains an English language justification for the belief.
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
@@ -96,6 +96,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 
 		for v, _ := range cell.ValueStates {
 			if cell.ValueStates[v] == MAYBE && v != value {
+				cell.ValueStates[v] = NO
 				for _, g := range cell.Groups {
 					g.Counts[v] -= 1
 					if g.Counts[v] == 1 {
@@ -103,7 +104,6 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 					}
 				}
 			}
-			cell.ValueStates[v] = NO
 		}
 		cell.ValueStates[value] = YES
 
@@ -122,7 +122,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 }
 
 // Assert that the grid does not contain the specified value at the specified
-// cell index. reason contains am English language justification for the belief.
+// cell index. 'reason' contains am English language justification for the belief.
 func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "reject: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
