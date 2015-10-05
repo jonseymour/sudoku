@@ -76,6 +76,17 @@ func (gd *Grid) Enqueue(p Priority, f func()) {
 	gd.queue[p] = append(gd.queue[p], f)
 }
 
+// Decrement the specified value counts for all intersecting groups of the specified
+// cell by 1. If a count drops to 1, apply the unique in group heuristic.
+func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
+	for _, g := range cell.Groups {
+		g.Counts[value] -= 1
+		if g.Counts[value] == 1 {
+			gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, value))
+		}
+	}
+}
+
 // Assert that the grid contains the specified value at the specified index.
 // 'reason' contains an English language justification for the belief.
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
@@ -94,19 +105,14 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 
 		gd.clues++
 
-		// available sllots for all maybes in newly asserted cell are
+		// available slots for all maybes in newly asserted cell are
 		// reduced by one in each intersecting group update those totals
 		// now and schedule work if a unique value is found in one group
 
 		for v, _ := range cell.ValueStates {
 			if cell.ValueStates[v] == MAYBE {
 				cell.ValueStates[v] = NO
-				for _, g := range cell.Groups {
-					g.Counts[v] -= 1
-					if g.Counts[v] == 1 {
-						gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, v))
-					}
-				}
+				gd.adjustValueCounts(cell, v)
 			}
 		}
 
@@ -137,12 +143,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		cell.Bits &^= bit
 		cell.Maybes -= 1
 
-		for _, g := range cell.Groups {
-			g.Counts[value] -= 1
-			if g.Counts[value] == 1 {
-				gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, value))
-			}
-		}
+		gd.adjustValueCounts(cell, value)
 
 		if cell.Maybes == 1 {
 			gd.Enqueue(IMMEDIATE, gd.heuristicExcludeSingleton(cell))
