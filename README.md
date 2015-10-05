@@ -79,6 +79,13 @@ A group is a collection of 9 cells organized as a either a row, column or a bloc
 Each cell intersects with 3 groups - the so-called 'intersecting groups' of the cell. Each cell has one intersecting group of each type: row, column and block.
 
 #REVISION HISTORY
+##1.1 - 5th October, 2015
+* reorganized source code of model package
+* add support for clue counting
+* improved handling of bad inputs
+* added support for queuing heuristics at different priorities
+* added additional examples
+
 ##1.0 - 5th October, 2015
 * initial release
 
