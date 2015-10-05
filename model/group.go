@@ -8,8 +8,8 @@ const (
 
 type Group struct {
 	Name   string
-	Counts [9]int
-	Cells  [9]*Cell
+	Counts [GROUP_SIZE]int
+	Cells  [GROUP_SIZE]*Cell
 }
 
 func (g *Group) String() string {

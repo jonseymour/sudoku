@@ -12,7 +12,7 @@ const (
 )
 
 const (
-	NUM_VALUES      = 9
+	BLOCK_SIZE      = 3
 	GROUP_SIZE      = 9
 	NUM_CELLS       = 81
 	NUM_GROUP_TYPES = 3

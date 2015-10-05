@@ -10,7 +10,7 @@ type CellIndex struct {
 }
 
 func (i CellIndex) GridIndex() int {
-	return i.Row*9 + i.Column
+	return i.Row*GROUP_SIZE + i.Column
 }
 
 func (i CellIndex) RowGroup() int {
@@ -18,11 +18,11 @@ func (i CellIndex) RowGroup() int {
 }
 
 func (i CellIndex) ColumnGroup() int {
-	return 9 + i.Column
+	return GROUP_SIZE + i.Column
 }
 
 func (i CellIndex) BlockGroup() int {
-	return 18 + (i.Row/3)*3 + (i.Column / 3)
+	return 2*GROUP_SIZE + (i.Row/BLOCK_SIZE)*BLOCK_SIZE + (i.Column / BLOCK_SIZE)
 }
 
 func (i CellIndex) RowIndex() int {
@@ -34,11 +34,11 @@ func (i CellIndex) ColumnIndex() int {
 }
 
 func (i CellIndex) BlockIndex() int {
-	return (i.Row%3)*3 + i.Column%3
+	return (i.Row%BLOCK_SIZE)*BLOCK_SIZE + i.Column%BLOCK_SIZE
 }
 
 func (i CellIndex) String() string {
-	return fmt.Sprintf("(Row:%d, Column:%d, Block:%d)", i.RowGroup()+1, i.ColumnGroup()-8, i.BlockGroup()-17)
+	return fmt.Sprintf("(Row:%d, Column:%d, Block:%d)", i.RowGroup()+1, i.ColumnGroup()-GROUP_SIZE+1, i.BlockGroup()-2*GROUP_SIZE+1)
 }
 
 type Cell struct {
@@ -46,10 +46,10 @@ type Cell struct {
 	Maybes      int
 	Bits        int
 	Value       *int
-	ValueStates [9]ValueState
-	Groups      [3]*Group
+	ValueStates [GROUP_SIZE]ValueState
+	Groups      [NUM_GROUP_TYPES]*Group
 }
 
 func (c *Cell) Index() CellIndex {
-	return CellIndex{Row: c.GridIndex / 9, Column: c.GridIndex % 9}
+	return CellIndex{Row: c.GridIndex / GROUP_SIZE, Column: c.GridIndex % GROUP_SIZE}
 }
