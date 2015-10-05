@@ -4,10 +4,27 @@ import (
 	"fmt"
 )
 
+type ValueState int
+
 type CellIndex struct {
 	Row    int
 	Column int
 }
+
+type Cell struct {
+	GridIndex   int
+	Maybes      int
+	Bits        int
+	Value       *int
+	ValueStates [GROUP_SIZE]ValueState
+	Groups      [NUM_GROUP_TYPES]*Group
+}
+
+const (
+	MAYBE ValueState = 0 + iota
+	NO
+	YES
+)
 
 func (i CellIndex) GridIndex() int {
 	return i.Row*GROUP_SIZE + i.Column
@@ -39,15 +56,6 @@ func (i CellIndex) BlockIndex() int {
 
 func (i CellIndex) String() string {
 	return fmt.Sprintf("(Row:%d, Column:%d, Block:%d)", i.RowGroup()+1, i.ColumnGroup()-GROUP_SIZE+1, i.BlockGroup()-2*GROUP_SIZE+1)
-}
-
-type Cell struct {
-	GridIndex   int
-	Maybes      int
-	Bits        int
-	Value       *int
-	ValueStates [GROUP_SIZE]ValueState
-	Groups      [NUM_GROUP_TYPES]*Group
 }
 
 func (c *Cell) Index() CellIndex {

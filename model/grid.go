@@ -11,16 +11,8 @@ const (
 	DEFERRED
 )
 
-const (
-	BLOCK_SIZE      = 3
-	GROUP_SIZE      = 9
-	NUM_CELLS       = 81
-	NUM_GROUP_TYPES = 3
-	NUM_GROUPS      = 27
-	NUM_PRIORITIES  = 2
-	MIN_CLUES       = 17
-)
-
+// A grid consists of cells and groups and state that tracks the number
+// of asserted clues and a queue of pending heuristics.
 type Grid struct {
 	Groups [NUM_GROUPS]*Group
 	Cells  [NUM_CELLS]*Cell
@@ -29,6 +21,13 @@ type Grid struct {
 	queue [NUM_PRIORITIES][]func()
 }
 
+// Initialize a new grid. No clues are asserted.
+// All cells are initialized with references to their
+// intersecting groups and vice versa.
+//
+// Counters are initialized to maximum values for the
+//  - counts by value by group (Group.Counts)
+//  - maybes by cell (Cell.Maybes)
 func NewGrid() *Grid {
 	grid := &Grid{
 		queue: [NUM_PRIORITIES][]func(){
@@ -72,10 +71,13 @@ func NewGrid() *Grid {
 	return grid
 }
 
+// Enqueue a heuristic to try with the specified priority
 func (gd *Grid) Enqueue(p Priority, f func()) {
 	gd.queue[p] = append(gd.queue[p], f)
 }
 
+// Assert that the grid contains the specified value and the specified index.
+// Reason contains an English language justification for the belief.
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
@@ -119,14 +121,8 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	}
 }
 
-func (gd *Grid) processUnique(g *Group, value int) {
-	for _, c := range g.Cells {
-		if c.ValueStates[value] == MAYBE {
-			gd.Enqueue(IMMEDIATE, gd.heuristicUniqueInGroup(g, c, value))
-		}
-	}
-}
-
+// Assert that the grid does not contain the specified value at the specified
+// cell index. reason contains am English language justification for the belief.
 func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "reject: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
@@ -162,6 +158,12 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 	}
 }
 
+// Solve the grid by iterating over the work queue until MIN_CLUES
+// are obtained or until there is nothing else to try.
+// Work is prioritsed so that cheaper heuristics are tried first and
+// more expensive heuristics are only tried if there are no more
+// cheap heuristics to try. Returns true if the solution is obtained, false
+// otherwise.
 func (gd *Grid) Solve() bool {
 	if gd.clues < MIN_CLUES {
 		panic(fmt.Sprintf("too few clues (%d) to solve", gd.clues))
@@ -191,4 +193,13 @@ mainloop:
 	}
 
 	return gd.clues == NUM_CELLS
+}
+
+//
+func (gd *Grid) processUnique(g *Group, value int) {
+	for _, c := range g.Cells {
+		if c.ValueStates[value] == MAYBE {
+			gd.Enqueue(IMMEDIATE, gd.heuristicUniqueInGroup(g, c, value))
+		}
+	}
 }

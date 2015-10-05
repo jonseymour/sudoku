@@ -5,13 +5,16 @@ import (
 	"io/ioutil"
 )
 
-type ValueState int
 type GroupType int
 
 var LogFile io.Writer = ioutil.Discard
 
 const (
-	MAYBE ValueState = 0 + iota
-	NO
-	YES
+	BLOCK_SIZE      = 3
+	GROUP_SIZE      = 9
+	NUM_CELLS       = 81
+	NUM_GROUP_TYPES = 3
+	NUM_GROUPS      = 27
+	NUM_PRIORITIES  = 2
+	MIN_CLUES       = 17
 )
