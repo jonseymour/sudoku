@@ -71,6 +71,30 @@ func NewGrid() *Grid {
 	return grid
 }
 
+// Creates a clone of the receiving grid which duplicates all the state
+// except for the work queue.
+func (gd *Grid) Clone() *Grid {
+	grid := NewGrid()
+	grid.clues = gd.clues
+
+	for i, g := range gd.Groups {
+		for j, c := range g.Counts {
+			grid.Groups[i].Counts[j] = c
+		}
+	}
+
+	for i, c := range gd.Cells {
+		cell := grid.Cells[i]
+		cell.Maybes = c.Maybes
+		cell.Value = c.Value
+		cell.Bits = c.Bits
+		for v, s := range c.ValueStates {
+			cell.ValueStates[v] = s
+		}
+	}
+	return grid
+}
+
 // Enqueue a heuristic to try with the specified priority
 func (gd *Grid) Enqueue(p Priority, f func()) {
 	gd.queue[p] = append(gd.queue[p], f)
