@@ -132,3 +132,39 @@ func (gd *Grid) heuristicExcludeTriples(cell *Cell) func() {
 		}
 	}
 }
+
+//
+func (gd *Grid) heuristicExcludeComplement(g1 *Group, g2 *Group, value int, count int) func() {
+	return func() {
+		tmp := []*Cell{}
+		i := 0
+		j := 0
+		k := 0
+		for i < GROUP_SIZE && j < GROUP_SIZE {
+			diff := g1.Cells[i].GridIndex - g2.Cells[j].GridIndex
+			if diff > 0 {
+				tmp = append(tmp, g2.Cells[j])
+				j++
+			} else if diff < 0 {
+				i++
+			} else {
+				if g2.Cells[j].ValueStates[value] == MAYBE {
+					k++
+				}
+				j++
+				i++
+			}
+		}
+		for j < GROUP_SIZE {
+			tmp = append(tmp, g2.Cells[j])
+			j++
+		}
+		if k == count {
+			for _, c := range tmp {
+				if c.ValueStates[value] == MAYBE {
+					gd.Reject(c.Index(), value, fmt.Sprintf("linear restriction of %d by %s and %s", value+1, g1, g2))
+				}
+			}
+		}
+	}
+}

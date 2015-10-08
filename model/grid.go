@@ -85,6 +85,21 @@ func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
 			gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, value))
 		}
 	}
+
+	f := func(g1 *Group, g2 *Group) {
+		c := g1.Counts[value]
+		switch c {
+		case 2, 3:
+			if g2.Counts[value] > c {
+				gd.Enqueue(DEFERRED, gd.heuristicExcludeComplement(g1, g2, value, c))
+			}
+		}
+	}
+
+	f(cell.Groups[BLOCK], cell.Groups[ROW])
+	f(cell.Groups[BLOCK], cell.Groups[COLUMN])
+	f(cell.Groups[ROW], cell.Groups[BLOCK])
+	f(cell.Groups[COLUMN], cell.Groups[BLOCK])
 }
 
 // Assert that the grid contains the specified value at the specified index.
