@@ -233,19 +233,10 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
 	cell := copy.Cells[index.GridIndex()]
 
-	trial := make(chan bool)
-	go func() {
-		defer func() {
-			if recover() != nil {
-				trial <- false
-			}
-		}()
-		copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, cell.Index()))
-		r, _ := copy.Solve()
-		trial <- r
-	}()
+	copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, cell.Index()))
+	solved, _ := copy.Solve()
 
-	if <-trial {
+	if solved {
 
 		// value @ index - produces a valid solution
 
