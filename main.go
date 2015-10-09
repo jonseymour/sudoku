@@ -31,7 +31,9 @@ func main() {
 	var overflow string
 	br := bufio.NewReader(os.Stdin)
 	bw := bufio.NewWriter(os.Stdout)
+	puzzles := 0
 
+lineloop:
 	for {
 		grid := model.NewGrid()
 
@@ -57,6 +59,7 @@ func main() {
 			line = strings.TrimSpace(line)
 			buffer = buffer + line
 		}
+		puzzles += 1
 
 		overflow = buffer[81:]
 		buffer = buffer[0:81]
@@ -70,15 +73,15 @@ func main() {
 				value := int(ch - int32('1'))
 				grid.Assert(model.CellIndex{Row: r, Column: c}, value, "initial state")
 			} else {
-				fmt.Fprintf(os.Stderr, "invalid cell value: %v\n", string(rune(ch)))
-				os.Exit(2)
+				fmt.Fprintf(os.Stderr, "invalid cell value: %d: %v\n", puzzles, string(rune(ch)))
+				continue lineloop
 			}
 		}
 
 		var err error
 		if solved, err = grid.Solve(); err != nil {
-			fmt.Fprintf(os.Stderr, "invalid puzzle: %v\n", err)
-			os.Exit(2)
+			fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", puzzles, err)
+			continue lineloop
 		}
 
 		for r := 0; r < 9; r++ {
