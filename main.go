@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/jonseymour/sudoku/model"
 	"os"
+	"strings"
 )
 
 const (
@@ -27,48 +28,59 @@ func main() {
 	}
 
 	var solved = false
+	var overflow string
 	br := bufio.NewReader(os.Stdin)
 	bw := bufio.NewWriter(os.Stdout)
+
 	for {
 		grid := model.NewGrid()
-		for r := 0; r < 9; r++ {
-			if row, err := br.ReadString('\n'); err != nil {
-				if r != 0 {
-					fmt.Fprintf(os.Stderr, "read error: %v\n", err)
-					os.Exit(2)
-				} else {
+
+		var buffer string
+
+		buffer = overflow
+		overflow = ""
+
+		for len(buffer) < 81 {
+			line, err := br.ReadString('\n')
+			if err != nil {
+				if len(buffer) == 0 {
 					if solved {
 						os.Exit(0)
 					} else {
 						os.Exit(1)
 					}
-				}
-			} else {
-				if len(row) < 9 {
-					fmt.Fprintf(os.Stderr, "invalid row\n")
-					os.Exit(2)
 				} else {
-					row = row[0:9]
-					for c, v := range row {
-						if v == '.' {
-							continue
-						}
-						if v >= '1' && v <= '9' {
-							value := int(v - int32('1'))
-							grid.Assert(model.CellIndex{Row: r, Column: c}, value, "problem initialization")
-						} else {
-							fmt.Fprintf(os.Stderr, "invalid cell value: %v\n", string(rune(v)))
-							os.Exit(2)
-						}
-					}
+					fmt.Fprintf(os.Stderr, "read error: %v\n", err)
+					os.Exit(2)
 				}
 			}
+			line = strings.TrimSpace(line)
+			buffer = buffer + line
 		}
+
+		overflow = buffer[81:]
+		buffer = buffer[0:81]
+		for i, ch := range buffer {
+			if ch == '.' || ch == '0' {
+				continue
+			}
+			r := i / 9
+			c := i % 9
+			if ch >= '1' && ch <= '9' {
+				value := int(ch - int32('1'))
+				grid.Assert(model.CellIndex{Row: r, Column: c}, value, "initial state")
+			} else {
+				fmt.Fprintf(os.Stderr, "invalid cell value: %v\n", string(rune(ch)))
+				os.Exit(2)
+			}
+		}
+
 		var err error
 		if solved, err = grid.Solve(); err != nil {
 			fmt.Fprintf(os.Stderr, "invalid puzzle: %v\n", err)
-			os.Exit(3)
+			os.Exit(2)
 		}
+
 		for r := 0; r < 9; r++ {
 			for c := 0; c < 9; c++ {
 				x := r*9 + c
