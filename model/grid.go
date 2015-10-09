@@ -231,9 +231,8 @@ func (gd *Grid) guess() (CellIndex, int) {
 // If the solution is unique, there should be no such solution.
 func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
-	cell := copy.Cells[index.GridIndex()]
 
-	copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, cell.Index()))
+	copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, index))
 	solved, _ := copy.Solve()
 
 	if solved {
@@ -248,7 +247,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		alt.Reject(index, value, fmt.Sprintf("testing that alternative is not valid"))
 		r2, _ := alt.Solve()
 		if r2 {
-			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d, %d", index, *copy.Cells[cell.GridIndex].Value+1, *alt.Cells[cell.GridIndex].Value+1)
+			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d, %d", index, *copy.Cells[index.GridIndex()].Value+1, *alt.Cells[index.GridIndex()].Value+1)
 			return true, gd.ambiguity
 		} else if alt.ambiguity != nil {
 			// if the modified grid failed because of an ambiguity, then
