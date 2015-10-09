@@ -7,8 +7,9 @@ sudoku - a golang sudoku solver
 #DESCRIPTION
 'sudoku' implements a heuristic-based command-line Sudoku solver.
 
-The solver does not currently implement a backtracking algorithm. Instead, in order
-to make progress, it applies heuristics in the same way that a human player would. As a result, there are some puzzles that the solver cannot currently solve.
+The solver attempts to make progress using heuristics and only falls back
+to a brute force (or backtracking) approach when available heuristics are
+exhausted.
 
 ##INPUT
 Puzzles formatted according to PUZZLE FORMAT are read from stdin.
@@ -60,12 +61,10 @@ When a group contains two cells whose values are known to be restricted to a pai
 ##triple exclusion
 When a group contains three cells whose values are known to be restricted to a triple of values, then any other cell in the same group cannot hold any of the three values, so we reject such values in those cells.
 
-##MISSING HEURISTICS
+##linear restrictions
+If a block contains 2 or 3 unsolved cells in a single row (or column), those
+cells are the only cells in the block that can contain a particular value, then that value can be rejected from the same row (or column) in other blocks.
 
-The following heuristics are not currently implemented.
-
-##Single Dimensional Block Constraints
-If a block group contains 2 or 3 unsolved cells in the same row (column) and there are candidate values are constrained to be in that same row (column) group, then those values can be eliminated from the adjacent rows (columns) in the adjacent row (column) blocks.
 
 #BUILDING
 Install the golang tool chain for your host, then run:
@@ -98,6 +97,7 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 * improved handling of bad inputs
 * added support for queuing heuristics at different priorities
 * added additional examples
+* added support for backtracking and ambiguous puzzle detection
 
 ##1.0 - 5th October, 2015
 * initial release
