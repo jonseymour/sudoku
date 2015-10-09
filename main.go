@@ -64,7 +64,11 @@ func main() {
 				}
 			}
 		}
-		solved = grid.Solve()
+		var err error
+		if solved, err = grid.Solve(); err != nil {
+			fmt.Fprintf(os.Stderr, "invalid puzzle: %v\n", err)
+			os.Exit(3)
+		}
 		for r := 0; r < 9; r++ {
 			for c := 0; c < 9; c++ {
 				x := r*9 + c

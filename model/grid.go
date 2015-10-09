@@ -206,33 +206,46 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 // more expensive heuristics are only tried if there are no more
 // cheap heuristics to try. Returns true if the solution is obtained, false
 // otherwise.
-func (gd *Grid) Solve() bool {
+func (gd *Grid) Solve() (bool, error) {
 	if gd.clues < MIN_CLUES {
-		panic(fmt.Sprintf("too few clues (%d) to solve", gd.clues))
+		return false, fmt.Errorf("too few clues (%d) to solve", gd.clues)
 	}
 
-mainloop:
-	for gd.clues < NUM_CELLS {
-		for len(gd.queue[0]) > 0 && gd.clues < NUM_CELLS {
-			next := gd.queue[0][0]
-			gd.queue[0] = gd.queue[0][1:]
-			next()
-		}
+	result := make(chan error)
 
-		if gd.clues < NUM_CELLS {
+	go func() {
 
-			// still busy - look for some low priority things to do
-
-			for i, q := range gd.queue {
-				if len(q) > 0 {
-					gd.queue[0] = append(gd.queue[0], q[0])
-					gd.queue[i] = q[1:]
-					continue mainloop
-				}
+		defer func() {
+			if r := recover(); r != nil {
+				result <- fmt.Errorf("%v", r)
 			}
-			break mainloop
-		}
-	}
+		}()
 
-	return gd.clues == NUM_CELLS
+	mainloop:
+		for gd.clues < NUM_CELLS {
+			for len(gd.queue[0]) > 0 && gd.clues < NUM_CELLS {
+				next := gd.queue[0][0]
+				gd.queue[0] = gd.queue[0][1:]
+				next()
+			}
+
+			if gd.clues < NUM_CELLS {
+
+				// still busy - look for some low priority things to do
+
+				for i, q := range gd.queue {
+					if len(q) > 0 {
+						gd.queue[0] = append(gd.queue[0], q[0])
+						gd.queue[i] = q[1:]
+						continue mainloop
+					}
+				}
+				break mainloop
+			}
+		}
+		result <- nil
+
+	}()
+
+	return gd.clues == NUM_CELLS, <-result
 }
