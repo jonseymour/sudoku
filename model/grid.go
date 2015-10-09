@@ -212,9 +212,6 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 // cheap heuristics to try. Returns true if the solution is obtained, false
 // otherwise.
 func (gd *Grid) Solve() (bool, error) {
-	if gd.clues < MIN_CLUES {
-		return false, fmt.Errorf("too few clues (%d) to solve", gd.clues)
-	}
 
 	result := make(chan error)
 
