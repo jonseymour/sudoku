@@ -62,7 +62,7 @@ When a group contains two cells whose values are known to be restricted to a pai
 When a group contains three cells whose values are known to be restricted to a triple of values, then any other cell in the same group cannot hold any of the three values, so we reject such values in those cells.
 
 ##linear restrictions
-If a block contains 2 or 3 unsolved cells in a single row (or column), those
+If a block contains 2 or 3 unsolved cells in a single row (or column) and those
 cells are the only cells in the block that can contain a particular value, then that value can be rejected from the same row (or column) in other blocks.
 
 
@@ -72,9 +72,6 @@ Install the golang tool chain for your host, then run:
 ```go install```
 
 $GOPATH/bin/sudoku will contain the compiled binary.
-
-#LIMITATIONS
-The solver is currently incomplete; there are some puzzles - such as examples/toohard.txt - that cannot be solved using the currently implemented heuristics.
 
 #TERMINOLOGY
 ##Cell
