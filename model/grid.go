@@ -205,8 +205,96 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 	}
 }
 
-// Solve the grid by iterating over the work queue until MIN_CLUES
+// pick one of the undecided cells and one of the
+// available values for that cell.
+func (gd *Grid) guess() (CellIndex, int) {
+	for _, c := range gd.Cells {
+		if c.Value == nil {
+			for v, s := range c.ValueStates {
+				if s == MAYBE {
+					return c.Index(), v
+				}
+			}
+		}
+	}
+	panic("no guess is possible")
+}
+
+// Try to find the solution for the receiving grid by
+// cloning it and speculatively asserting the specified
+// value at the specified index.
+//
+// If we find a solution, then we check that it is unique
+// by trying to find an alternative value for the same cell
+// that produces a different solution.
+//
+// If the solution is unique, there should be no such solution.
+func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
+	copy := gd.Clone()
+	cell := copy.Cells[index.GridIndex()]
+
+	trial := make(chan bool)
+	go func() {
+		defer func() {
+			if recover() != nil {
+				trial <- false
+			}
+		}()
+		copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, cell.Index()))
+		r, _ := copy.Solve()
+		trial <- r
+	}()
+
+	if <-trial {
+
+		// value @ index - produces a valid solution
+
+		// we verify that there is no other solution at the same index
+		// by rejecting the value at the cell and trying to solve
+		// the resulting grid.
+
+		alt := gd.Clone()
+		alt.Reject(index, value, fmt.Sprintf("testing that alternative is not valid"))
+		r2, _ := alt.Solve()
+		if r2 {
+			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d, %d", index, *copy.Cells[cell.GridIndex].Value+1, *alt.Cells[cell.GridIndex].Value+1)
+			return true, gd.ambiguity
+		} else if alt.ambiguity != nil {
+			// if the modified grid failed because of an ambiguity, then
+			// there are multiple solutions in addition to the one we found
+			// which implies that the solution is not unique
+			gd.ambiguity = alt.ambiguity
+			return true, gd.ambiguity
+		}
+
+		// the solution in copy is unique, so update gd with copy and indicate
+		// we are done.
+
+		copy.copyState(gd)
+
+		return true, nil
+	} else {
+
+		if copy.ambiguity != nil {
+
+			// the trial failed because of an ambiguity
+			// propagate this ambiguity to the receiver
+
+			gd.ambiguity = copy.ambiguity
+			return true, gd.ambiguity
+		}
+
+		// since asserting the value @ index produced a contradiction
+		// we can now reject the value
+
+		gd.Reject(index, value, fmt.Sprintf("rejecting guess of %d @ %s after brute force failure", value+1, index))
+		return false, nil
+	}
+}
+
+// Solve the grid by iterating over the work queue until NUM_CELLS
 // are obtained or until there is nothing else to try.
+//
 // Work is prioritsed so that cheaper heuristics are tried first and
 // more expensive heuristics are only tried if there are no more
 // cheap heuristics to try. Returns true if the solution is obtained, false
@@ -233,7 +321,9 @@ func (gd *Grid) Solve() (bool, error) {
 
 			if gd.clues < NUM_CELLS {
 
-				// still busy - look for some low priority things to do
+				// unsolved, but there are some lower priority
+				// heuristics to try. move one of these
+				// into the priority 0 queue, and continue
 
 				for i, q := range gd.queue {
 					if len(q) > 0 {
@@ -243,59 +333,14 @@ func (gd *Grid) Solve() (bool, error) {
 					}
 				}
 
-				// clone the puzzle, find an unsolved clue, choose one of the
-				// values and solve. if it works, copy the solution, otherwise
-				// reject the selected value and continue here.
-
-				copy := gd.Clone()
-
-				for _, c := range copy.Cells {
-					if c.Value == nil {
-						for v, s := range c.ValueStates {
-							if s == MAYBE {
-								trial := make(chan bool)
-								go func() {
-									defer func() {
-										if recover() != nil {
-											trial <- false
-										}
-									}()
-									copy.Assert(c.Index(), v, fmt.Sprintf("trying random guess of %d @ %s", v+1, c.Index()))
-									r, _ := copy.Solve()
-									if !r {
-										gd.ambiguity = copy.ambiguity
-									}
-									trial <- r
-								}()
-								if <-trial {
-									alt := gd.Clone()
-									alt.Reject(c.Index(), v, fmt.Sprintf("testing that alternative is not valid"))
-									r2, _ := alt.Solve()
-									if r2 {
-										gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d, %d", c.Index(), *copy.Cells[c.GridIndex].Value+1, *alt.Cells[c.GridIndex].Value+1)
-										result <- gd.ambiguity
-										return
-									} else if alt.ambiguity != nil {
-										gd.ambiguity = alt.ambiguity
-										result <- gd.ambiguity
-										return
-									}
-									copy.copyState(gd)
-									break mainloop
-								} else {
-									if gd.ambiguity != nil {
-										result <- gd.ambiguity
-										return
-									}
-									gd.Reject(c.Index(), v, fmt.Sprintf("rejecting guess of %d @ %s after brute force failure", v+1, c.Index()))
-									continue mainloop
-								}
-							}
-						}
-					}
+				// there are no more heuristics available.
+				// guess a cell value, and test whether this
+				// produces a unique solution.
+				done, err := gd.speculate(gd.guess())
+				if done {
+					result <- err
+					return
 				}
-				result <- fmt.Errorf("no valid option available")
-				return
 			}
 		}
 		result <- nil
