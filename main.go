@@ -33,7 +33,6 @@ func main() {
 	bw := bufio.NewWriter(os.Stdout)
 	puzzles := 0
 
-lineloop:
 	for {
 		grid := model.NewGrid()
 
@@ -74,14 +73,13 @@ lineloop:
 				grid.Assert(model.CellIndex{Row: r, Column: c}, value, "initial state")
 			} else {
 				fmt.Fprintf(os.Stderr, "invalid cell value: %d: %v\n", puzzles, string(rune(ch)))
-				continue lineloop
+				os.Exit(2)
 			}
 		}
 
 		var err error
 		if solved, err = grid.Solve(); err != nil {
 			fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", puzzles, err)
-			continue lineloop
 		}
 
 		for r := 0; r < 9; r++ {
