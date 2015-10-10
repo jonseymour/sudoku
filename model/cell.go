@@ -61,3 +61,11 @@ func (i CellIndex) String() string {
 func (c *Cell) Index() CellIndex {
 	return CellIndex{Row: c.GridIndex / GROUP_SIZE, Column: c.GridIndex % GROUP_SIZE}
 }
+
+func (c *Cell) NumConstraints() int {
+	count := (GROUP_SIZE - c.Maybes)
+	for _, g := range c.Groups {
+		count += g.clues
+	}
+	return count
+}
