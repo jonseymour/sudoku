@@ -84,6 +84,7 @@ func (gd *Grid) copyState(dest *Grid) {
 		for j, c := range g.Counts {
 			dest.Groups[i].Counts[j] = c
 		}
+		dest.Groups[i].clues = g.clues
 	}
 
 	for i, c := range gd.Cells {
@@ -166,6 +167,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 		}
 
 		for _, g := range cell.Groups {
+			g.clues++
 			for _, c := range g.Cells {
 				if c.ValueStates[value] == MAYBE {
 					gd.Enqueue(IMMEDIATE, gd.heuristicExcludeNeighbours(i, c.Index(), value))
