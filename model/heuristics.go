@@ -7,7 +7,7 @@ import (
 // Reject the asserted value in a neighbour of the asserted cell.
 func (gd *Grid) heuristicExcludeNeighbours(asserted CellIndex, neighbour CellIndex, assertedValue int) func() {
 	return func() {
-		gd.Reject(neighbour, assertedValue, fmt.Sprintf("excluded by assertion of %d @ %s", assertedValue+1, asserted))
+		gd.Reject(neighbour, assertedValue, fmt.Sprintf("Direct Exclusion by %s", asserted))
 	}
 }
 
@@ -18,7 +18,7 @@ func (gd *Grid) heuristicUniqueInGroup(g *Group, value int) func() {
 	return func() {
 		for _, c := range g.Cells {
 			if c.ValueStates[value] == MAYBE {
-				gd.Assert(c.Index(), value, fmt.Sprintf("unique value found in group %s", g))
+				gd.Assert(c.Index(), value, fmt.Sprintf("Hidden Single in %s", g))
 			}
 		}
 	}
@@ -29,7 +29,7 @@ func (gd *Grid) heuristicExcludeSingleton(cell *Cell) func() {
 	return func() {
 		for v, s := range cell.ValueStates {
 			if s == MAYBE {
-				gd.Assert(cell.Index(), v, "only possible value in cell")
+				gd.Assert(cell.Index(), v, "Naked Single")
 				return
 			}
 		}
@@ -42,10 +42,10 @@ func (gd *Grid) heuristicExcludeSingleton(cell *Cell) func() {
 func (gd *Grid) heuristicExcludePair(p1 *Cell, p2 *Cell, exclude *Cell, pair []int) func() {
 	return func() {
 		if exclude.ValueStates[pair[0]] == MAYBE {
-			gd.Reject(exclude.Index(), pair[0], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], p1.Index(), p2.Index()))
+			gd.Reject(exclude.Index(), pair[0], fmt.Sprintf("Naked Pair (%v,%v) @ %s, %s", pair[0]+1, pair[1]+1, p1.Index(), p2.Index()))
 		}
 		if exclude.ValueStates[pair[1]] == MAYBE {
-			gd.Reject(exclude.Index(), pair[1], fmt.Sprintf("excluded by pair (%v,%v) @ %s, %s", pair[0], pair[1], p1.Index(), p2.Index()))
+			gd.Reject(exclude.Index(), pair[1], fmt.Sprintf("Naked Pair (%v,%v) @ %s, %s", pair[0]+1, pair[1]+1, p1.Index(), p2.Index()))
 		}
 	}
 }
@@ -85,13 +85,13 @@ func (gd *Grid) heuristicExcludePairs(cell *Cell) func() {
 func (gd *Grid) heuristicExcludeTriple(t1 *Cell, t2 *Cell, t3 *Cell, exclude *Cell, triple []int) func() {
 	return func() {
 		if exclude.ValueStates[triple[0]] == MAYBE {
-			gd.Reject(exclude.Index(), triple[0], fmt.Sprintf("excluded by triple (%v,%v,%v) @ %s, %s, %s", triple[0], triple[1], triple[2], t1.Index(), t2.Index(), t3.Index()))
+			gd.Reject(exclude.Index(), triple[0], fmt.Sprintf("Naked Triple (%v,%v,%v) @ (%s, %s, %s)", triple[0]+1, triple[1]+1, triple[2]+1, t1.Index(), t2.Index(), t3.Index()))
 		}
 		if exclude.ValueStates[triple[1]] == MAYBE {
-			gd.Reject(exclude.Index(), triple[1], fmt.Sprintf("excluded by triple (%v,%v,%v) @ %s, %s, %s", triple[0], triple[1], triple[2], t1.Index(), t2.Index(), t3.Index()))
+			gd.Reject(exclude.Index(), triple[1], fmt.Sprintf("Naked Triple (%v,%v,%v) @ (%s, %s, %s)", triple[0]+1, triple[1]+1, triple[2]+1, t1.Index(), t2.Index(), t3.Index()))
 		}
 		if exclude.ValueStates[triple[2]] == MAYBE {
-			gd.Reject(exclude.Index(), triple[2], fmt.Sprintf("excluded by triple (%v,%v,%v) @ %s, %s, %s", triple[0], triple[1], triple[2], t1.Index(), t2.Index(), t3.Index()))
+			gd.Reject(exclude.Index(), triple[2], fmt.Sprintf("Naked Triple (%v,%v,%v) @ (%s, %s, %s)", triple[0]+1, triple[1]+1, triple[2]+1, t1.Index(), t2.Index(), t3.Index()))
 		}
 	}
 }
@@ -162,7 +162,7 @@ func (gd *Grid) heuristicExcludeComplement(g1 *Group, g2 *Group, value int, coun
 		if k == count {
 			for _, c := range tmp {
 				if c.ValueStates[value] == MAYBE {
-					gd.Reject(c.Index(), value, fmt.Sprintf("linear restriction of %d by %s and %s", value+1, g1, g2))
+					gd.Reject(c.Index(), value, fmt.Sprintf("Exclude Complement of %s's intersection with %s", g2, g1))
 				}
 			}
 		}

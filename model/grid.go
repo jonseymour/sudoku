@@ -143,7 +143,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 	fmt.Fprintf(LogFile, "assert: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
 	if cell.Value != nil && *cell.Value != value {
-		panic(fmt.Errorf("contradictory assertion: already asserted %d @ %s, now trying to assert %d", *cell.Value+1, i, value+1))
+		panic(fmt.Errorf("Assertion Contradicted. New assertion %d conflicts with existing assertion %d in grid %d @ %s", value+1, *cell.Value+1, gd.id, i))
 	}
 
 	switch cell.ValueStates[value] {
@@ -176,7 +176,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 		}
 
 	case NO:
-		panic(fmt.Errorf("contradiction: attempted to assert %d @ %v, but this value was previously rejected", value+1, i))
+		panic(fmt.Errorf("Rejection Contradicted: New assertion %d conflicts with existing rejection in grid %d @ %s.", value+1, gd.id, i))
 	case YES:
 		// do nothing
 	}
@@ -205,7 +205,7 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		}
 	case YES:
 		if value == *cell.Value {
-			panic(fmt.Errorf("contradiction: attempt to reject value=%d @ %s, but this value was previously asserted", value+1, i))
+			panic(fmt.Errorf("Assertion Contradicted: New rejection %d @ %s in grid %d contradicts existing assertion.", value+1, i, gd.id))
 		}
 	case NO:
 		// do nothing
@@ -259,7 +259,7 @@ func (gd *Grid) guess() (CellIndex, int) {
 func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
 
-	copy.Assert(index, value, fmt.Sprintf("guessing %d @ %s", value+1, index))
+	copy.Assert(index, value, fmt.Sprintf("Speculative Assertion"))
 	solved, err := copy.Solve()
 
 	if solved {
@@ -271,7 +271,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		// the resulting grid.
 
 		alt := gd.Clone()
-		alt.Reject(index, value, fmt.Sprintf("testing that alternative is not valid"))
+		alt.Reject(index, value, fmt.Sprintf("Verify Uniqueness"))
 		r2, _ := alt.Solve()
 		if r2 {
 			fmt.Fprintf(LogFile, "ambiguous (%d): %s\n", gd.id, gd)
@@ -307,7 +307,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		// since asserting the value @ index produced a contradiction
 		// we can now reject the value
 
-		gd.Reject(index, value, fmt.Sprintf("rejecting guess of %d @ %s after contradiction: %s", value+1, index, err))
+		gd.Reject(index, value, fmt.Sprintf("Contradiction Found: %v", err))
 		return false, nil
 	}
 }

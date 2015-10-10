@@ -49,25 +49,42 @@ If the solver solves the last input puzzle read from stdin, it exits with a stat
 ##HEURISTICS
 The solver currently implements the following heuristics.
 
-##exclude asserted value from other cells same group
+##Direct Exclusion
 When a value is asserted in a cell, the value is rejected in all other cells of the cell's 3 intersecting groups.
 
-##only value in cell
+##Naked Single
 When it known that the only possible value in a cell is a particular value, then that value is asserted for the cell.
 
-##single remaining position in group for value
+##Hidden Single
 When there is only one possible remaining cell for a given value in a given group, then that value is asserted in that cell.
 
-##pair exclusion
+##Naked Pair
 When a group contains two cells whose values are known to be restricted to a pair of values, then any other cell in the same group cannot hold either of the two values, so we reject such values in those cells.
 
-##triple exclusion
+##Naked Triple
 When a group contains three cells whose values are known to be restricted to a triple of values, then any other cell in the same group cannot hold any of the three values, so we reject such values in those cells.
 
-##linear restrictions
+##Exclude Complement
 If a block contains 2 or 3 unsolved cells in a single row (or column) and those
 cells are the only cells in the block that can contain a particular value, then that value can be rejected from the same row (or column) in other blocks.
 
+This heuristic is known in other places as Pointed Pairs/Triples or Block/Line Reduction, depending on the context.
+
+##Speculative Assertion
+When we run out of other heuristics to try, we clone the current state of the
+solution and speculatively assert one of the possible cell/value pairs and see
+what happens.
+
+##Contradiction Found
+If a speculative assertion produced a contradiction, then we reject the cell/value
+pair that was the subject of the speculative assertion in the original solution.
+
+##Verify Uniqueness
+If a speculative assertion finds a solution, we need to verify that the solution
+is the only solution. We do this by rejecting the speculatively asserted cell/value
+pair in a new clone of the puzzle taken prior to the speculative fork. If this
+does not produce a contradiction, then the speculatively determined solution
+is not unique and therefore the puzzle does not have a unique completion.
 
 #BUILDING
 Install the golang tool chain for your host, then run:
