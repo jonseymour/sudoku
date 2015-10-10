@@ -112,6 +112,7 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 * [2] "Sudoku" - http://mathworld.wolfram.com/Sudoku.html
 * [3] "Sudoku" - https://en.wikipedia.org/wiki/Sudoku
 * [4] www.sudoku.com - http://www.sudoku.com/
+* [5] "Sudoku Wiki" - http://www.sudokuwiki.org/
 
 #COPYRIGHT
 (c) Jon Seymour 2015
