@@ -16,6 +16,7 @@ const (
 func main() {
 	var verbose = flag.Bool("verbose", false, "Set the verbosity of the logging")
 	var version = flag.Bool("version", false, "Report the version number")
+	var format = flag.String("format", "9.", "Output format. One of: 9., 90, 1., 10")
 	flag.Parse()
 
 	if *verbose {
@@ -28,10 +29,15 @@ func main() {
 	}
 
 	var solved = false
-	rdr := gridio.NewGridReader(os.Stdin)
-	w := gridio.NewGridWriter(os.Stdout)
-
+	var w gridio.GridWriter
 	var err error
+	rdr := gridio.NewGridReader(os.Stdin)
+	w, err = gridio.NewGridWriter(os.Stdout, *format)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s", err)
+		os.Exit(1)
+	}
+
 	var grid *model.Grid
 
 	for grid, err = rdr.Read(); grid != nil && err == nil; grid, err = rdr.Read() {

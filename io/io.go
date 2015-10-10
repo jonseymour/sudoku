@@ -85,23 +85,34 @@ type GridWriter interface {
 
 type gridWriter struct {
 	buffered *bufio.Writer
+	format   string
 }
 
-func NewGridWriter(w io.Writer) GridWriter {
+func NewGridWriter(w io.Writer, format string) (GridWriter, error) {
+	if format == "" {
+		format = "9."
+	}
+	if len(format) != 2 ||
+		(format[0] != '9' && format[0] != '1') ||
+		(format[1] != '0' && format[1] != '.') {
+		return nil, fmt.Errorf("format must be one of: 9., 90, 1., 10")
+	}
 	gw := &gridWriter{
 		buffered: bufio.NewWriter(w),
+		format:   format,
 	}
-	return gw
+	return gw, nil
 }
 
 func (gw *gridWriter) Write(g *model.Grid) error {
 	var err error
+	wrapModulus := 81 / int(gw.format[0]-'0')
 	for r := 0; r < 9; r++ {
 		for c := 0; c < 9; c++ {
 			x := r*9 + c
 			v := g.Cells[x].Value
 			if v == nil {
-				_, err = gw.buffered.WriteString(".")
+				_, err = gw.buffered.WriteRune(rune(gw.format[1]))
 			} else {
 				_, err = gw.buffered.WriteRune(rune(int32(*v) + int32('1')))
 			}
@@ -109,8 +120,10 @@ func (gw *gridWriter) Write(g *model.Grid) error {
 				return err
 			}
 		}
-		if _, err = gw.buffered.WriteString("\n"); err != nil {
-			return err
+		if (r+1)*9%wrapModulus == 0 {
+			if _, err = gw.buffered.WriteString("\n"); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

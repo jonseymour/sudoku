@@ -2,7 +2,7 @@
 sudoku - a golang sudoku solver
 
 #SYNOPSIS
-./sudoku [--verbose]|[--version] < puzzle > solution
+./sudoku [--verbose]|[--version]|[--format=9.|90|1.|10] < puzzle > solution
 
 #DESCRIPTION
 'sudoku' implements a heuristic-based command-line Sudoku solver.
@@ -37,6 +37,13 @@ Other examples may be found in the examples/ subdirectory.
 
 ##OUTPUT
 If the solver can solve the puzzle, it outputs the solution on stdout. Otherwise, it outputs a partial solution on stdout.
+
+##OUTPUT FORMAT
+The default output format is a 9x9 grid with (.) to indicate a missing clue.
+The --format option can be used to select an alternative output format. The
+following options are available: 9., 90, 1., 10 where the first character indicates
+the number of lines per solution and the second character indicates which
+character is used to indicate a missing clue.
 
 ##DIAGNOSTICS
 To view the reasoning of the solver, invoke sudoku with ```--verbose```.
@@ -113,6 +120,7 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 * try to find the most constrained guess during backtracking
 * refine documentation of PUZZLE FORMAT and INPUT
 * factored out stream io into its own package
+* add support for a --format option to select the output puzzle format
 
 ##1.1 - 9th October, 2015
 * reorganized source code of model package
