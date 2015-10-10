@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
+	gridio "github.com/jonseymour/sudoku/io"
 	"github.com/jonseymour/sudoku/model"
+	"io"
 	"os"
-	"strings"
 )
 
 const (
@@ -28,76 +28,30 @@ func main() {
 	}
 
 	var solved = false
-	var overflow string
-	br := bufio.NewReader(os.Stdin)
-	bw := bufio.NewWriter(os.Stdout)
-	puzzles := 0
+	rdr := gridio.NewGridReader(os.Stdin)
+	w := gridio.NewGridWriter(os.Stdout)
 
-nextline:
-	for {
-		grid := model.NewGrid()
+	var err error
+	var grid *model.Grid
 
-		var buffer string
+	for grid, err = rdr.Read(); grid != nil && err == nil; grid, err = rdr.Read() {
 
-		buffer = overflow
-		overflow = ""
-
-		for len(buffer) < 81 {
-			line, err := br.ReadString('\n')
-			if err != nil {
-				if len(buffer) == 0 {
-					if solved {
-						os.Exit(0)
-					} else {
-						os.Exit(1)
-					}
-				} else {
-					fmt.Fprintf(os.Stderr, "read error: %v\n", err)
-					os.Exit(2)
-				}
-			}
-			line = strings.TrimSpace(line)
-			if len(line) == 0 || strings.HasPrefix(line, "#") {
-				continue nextline
-			}
-			buffer = buffer + line
-		}
-		puzzles += 1
-
-		overflow = buffer[81:]
-		buffer = buffer[0:81]
-		for i, ch := range buffer {
-			if ch == '.' || ch == '0' {
-				continue
-			}
-			r := i / 9
-			c := i % 9
-			if ch >= '1' && ch <= '9' {
-				value := int(ch - int32('1'))
-				grid.Assert(model.CellIndex{Row: r, Column: c}, value, "initial state")
-			} else {
-				fmt.Fprintf(os.Stderr, "invalid cell value: %d: %v\n", puzzles, string(rune(ch)))
-				os.Exit(2)
-			}
-		}
-
-		var err error
 		if solved, err = grid.Solve(); err != nil {
-			fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", puzzles, err)
+			fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", rdr.ReadCount(), err)
 		}
 
-		for r := 0; r < 9; r++ {
-			for c := 0; c < 9; c++ {
-				x := r*9 + c
-				v := grid.Cells[x].Value
-				if v == nil {
-					bw.WriteString(".")
-				} else {
-					bw.WriteRune(rune(int32(*v) + int32('1')))
-				}
+		w.Write(grid)
+		w.Flush()
+	}
+
+	if err != nil {
+		if solved {
+			os.Exit(0)
+		} else {
+			if err != io.EOF {
+				fmt.Fprintf(os.Stderr, "read error: %s\n", err)
 			}
-			bw.WriteString("\n")
-			bw.Flush()
+			os.Exit(1)
 		}
 	}
 }

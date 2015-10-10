@@ -112,6 +112,7 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 * updated to use the same terminology as sudokuwiki and other places
 * try to find the most constrained guess during backtracking
 * refine documentation of PUZZLE FORMAT and INPUT
+* factored out stream io into its own package
 
 ##1.1 - 9th October, 2015
 * reorganized source code of model package
