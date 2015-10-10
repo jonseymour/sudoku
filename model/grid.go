@@ -215,16 +215,36 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 // pick one of the undecided cells and one of the
 // available values for that cell.
 func (gd *Grid) guess() (CellIndex, int) {
+
+	// find the most constrained cell
+
+	var constrained *Cell = nil
+	constraints := 0
+
 	for _, c := range gd.Cells {
-		if c.Value == nil {
-			for v, s := range c.ValueStates {
-				if s == MAYBE {
-					return c.Index(), v
-				}
-			}
+		if c.Value != nil {
+			continue
+		}
+		actual := c.NumConstraints()
+		if actual > constraints {
+			constraints = actual
+			constrained = c
 		}
 	}
-	panic("no guess is possible")
+
+	if constrained == nil {
+		panic("could not find an unresolved cell")
+	}
+
+	// find an unresolved value for that cell
+
+	for v, s := range constrained.ValueStates {
+		if s == MAYBE {
+			return constrained.Index(), v
+		}
+	}
+
+	panic("could not find an unresolved value")
 }
 
 // Try to find the solution for the receiving grid by
