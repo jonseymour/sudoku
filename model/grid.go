@@ -237,7 +237,7 @@ func (gd *Grid) guess() (CellIndex, int) {
 func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
 
-	copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, index))
+	copy.Assert(index, value, fmt.Sprintf("guessing %d @ %s", value+1, index))
 	solved, err := copy.Solve()
 
 	if solved {
@@ -285,7 +285,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		// since asserting the value @ index produced a contradiction
 		// we can now reject the value
 
-		gd.Reject(index, value, fmt.Sprintf("rejecting guess of %d @ %s after brute force failure: %s", value+1, index, err))
+		gd.Reject(index, value, fmt.Sprintf("rejecting guess of %d @ %s after contradiction: %s", value+1, index, err))
 		return false, nil
 	}
 }
