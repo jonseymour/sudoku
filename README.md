@@ -12,11 +12,12 @@ to a brute force (or backtracking) approach when available heuristics are
 exhausted.
 
 ##INPUT
-Puzzles formatted according to PUZZLE FORMAT are read from stdin.
+One or more puzzles formatted according to PUZZLE FORMAT are read from stdin.
 
 ##PUZZLE FORMAT
-Puzzles are formatted as 9 lines of 9 characters each (excluding the line ending).
-Numbers are used for clues. Period is used to indicate an absent clue.
+Puzzles are formatted as 9 lines of 9 characters each or as a single line of 81 characters (lengths exclude the line ending in both cases). Positive numbers are used for clues; a period (.) or zero (0) is used to indicate a missing clue.
+
+Blank lines or lines beginning with a leading comment indicator ('#') are ignored.
 
 For example, examples/puzzle.txt:
 
@@ -33,9 +34,6 @@ For example, examples/puzzle.txt:
 ```
 
 Other examples may be found in the examples/ subdirectory.
-
-Puzzles can also be submitted as lines of 81 characters with absent clues being
-specified with either '.' or '0'.
 
 ##OUTPUT
 If the solver can solve the puzzle, it outputs the solution on stdout. Otherwise, it outputs a partial solution on stdout.
@@ -84,7 +82,7 @@ If a speculative assertion finds a solution, we need to verify that the solution
 is the only solution. We do this by rejecting the speculatively asserted cell/value
 pair in a new clone of the puzzle taken prior to the speculative fork. If this
 does not produce a contradiction, then the speculatively determined solution
-is not unique and therefore the puzzle does not have a unique completion.
+is not unique and therefore the original puzzle does not have a unique completion.
 
 #BUILDING
 Install the golang tool chain for your host, then run:
@@ -111,6 +109,9 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 ##1.2 - 10th October, 2015
 * allow parser to accept puzzles using Royle's format.
 * fixed an error in backtracker which caused some contradictions to be missed
+* updated to use the same terminology as sudokuwiki and other places
+* try to find the most constrained guess during backtracking
+* refine documentation of PUZZLE FORMAT and INPUT
 
 ##1.1 - 9th October, 2015
 * reorganized source code of model package
