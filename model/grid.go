@@ -346,3 +346,15 @@ func (gd *Grid) Solve() (bool, error) {
 	err := <-result
 	return gd.clues == NUM_CELLS && err == nil, err
 }
+
+func (gd *Grid) String() string {
+	result := [81]byte{}
+	for i, c := range gd.Cells {
+		if c.Value == nil {
+			result[i] = byte('.')
+		} else {
+			result[i] = byte(int32(*c.Value) + int32('1'))
+		}
+	}
+	return string(result[0:])
+}
