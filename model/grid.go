@@ -307,8 +307,8 @@ func (gd *Grid) Solve() (bool, error) {
 		}()
 
 	mainloop:
-		for gd.clues < NUM_CELLS {
-			for len(gd.queue[0]) > 0 && gd.clues < NUM_CELLS {
+		for {
+			for len(gd.queue[0]) > 0 {
 				next := gd.queue[0][0]
 				gd.queue[0] = gd.queue[0][1:]
 				next()
@@ -336,11 +336,13 @@ func (gd *Grid) Solve() (bool, error) {
 					result <- err
 					return
 				}
+			} else {
+				result <- nil
+				return
 			}
 		}
-		result <- nil
-
 	}()
 
-	return gd.clues == NUM_CELLS, <-result
+	err := <-result
+	return gd.clues == NUM_CELLS && err == nil, err
 }
