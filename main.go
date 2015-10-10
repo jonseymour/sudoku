@@ -33,6 +33,7 @@ func main() {
 	bw := bufio.NewWriter(os.Stdout)
 	puzzles := 0
 
+nextline:
 	for {
 		grid := model.NewGrid()
 
@@ -56,6 +57,9 @@ func main() {
 				}
 			}
 			line = strings.TrimSpace(line)
+			if len(line) == 0 || strings.HasPrefix(line, "#") {
+				continue nextline
+			}
 			buffer = buffer + line
 		}
 		puzzles += 1
