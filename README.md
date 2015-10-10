@@ -34,6 +34,9 @@ For example, examples/puzzle.txt:
 
 Other examples may be found in the examples/ subdirectory.
 
+Puzzles can also be submitted as lines of 81 characters with absent clues being
+specified with either '.' or '0'.
+
 ##OUTPUT
 If the solver can solve the puzzle, it outputs the solution on stdout. Otherwise, it outputs a partial solution on stdout.
 
@@ -88,7 +91,11 @@ A group is a collection of 9 cells organized as a either a row, column or a bloc
 Each cell intersects with 3 groups - the so-called 'intersecting groups' of the cell. Each cell has one intersecting group of each type: row, column and block.
 
 #REVISION HISTORY
-##1.1 - 5th October, 2015
+##1.2 - 10th October, 2015
+* allow parser to accept puzzles using Royle's format.
+* fixed an error in backtracker which caused some contradictions to be missed
+
+##1.1 - 9th October, 2015
 * reorganized source code of model package
 * add support for clue counting
 * improved handling of bad inputs
@@ -98,6 +105,13 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 
 ##1.0 - 5th October, 2015
 * initial release
+
+#REFERENCES
+
+* [1] "Minimal Sudoku" - http://staffhome.ecm.uwa.edu.au/~00013890/sudokumin.php
+* [2] "Sudoku" - http://mathworld.wolfram.com/Sudoku.html
+* [3] "Sudoku" - https://en.wikipedia.org/wiki/Sudoku
+* [4] www.sudoku.com - http://www.sudoku.com/
 
 #COPYRIGHT
 (c) Jon Seymour 2015
