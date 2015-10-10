@@ -252,7 +252,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		alt.Reject(index, value, fmt.Sprintf("testing that alternative is not valid"))
 		r2, _ := alt.Solve()
 		if r2 {
-			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d, %d", index, *copy.Cells[index.GridIndex()].Value+1, *alt.Cells[index.GridIndex()].Value+1)
+			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions %d - %d (grid=%d), %d (grid=%d)", index, gd.id, *copy.Cells[index.GridIndex()].Value+1, copy.id, *alt.Cells[index.GridIndex()].Value+1, alt.id)
 			return true, gd.ambiguity
 		} else if alt.ambiguity != nil {
 			// if the modified grid failed because of an ambiguity, then
