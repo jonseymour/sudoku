@@ -11,12 +11,15 @@ const (
 	DEFERRED
 )
 
+var gridCount int
+
 // A grid consists of cells and groups and state that tracks the number
 // of asserted clues and a queue of pending heuristics.
 type Grid struct {
 	Groups [NUM_GROUPS]*Group
 	Cells  [NUM_CELLS]*Cell
 
+	id        int
 	clues     int
 	queue     [NUM_PRIORITIES][]func()
 	ambiguity error
@@ -36,6 +39,8 @@ func NewGrid() *Grid {
 			[]func(){},
 		},
 	}
+	gridCount++
+	grid.id = gridCount
 	for x, _ := range grid.Groups {
 		g := &Group{}
 		grid.Groups[x] = g
@@ -134,7 +139,7 @@ func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
 // Assert that the grid contains the specified value at the specified index.
 // 'reason' contains an English language justification for the belief.
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
-	fmt.Fprintf(LogFile, "assert: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
+	fmt.Fprintf(LogFile, "assert: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
 	if cell.Value != nil && *cell.Value != value {
 		panic(fmt.Errorf("contradictory assertion: already asserted %d @ %s, now trying to assert %d", *cell.Value+1, i, value+1))
@@ -178,7 +183,7 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 // Assert that the grid does not contain the specified value at the specified
 // cell index. 'reason' contains am English language justification for the belief.
 func (gd *Grid) Reject(i CellIndex, value int, reason string) {
-	fmt.Fprintf(LogFile, "reject: value=%d, cell=%s, reason=%s\n", value+1, i, reason)
+	fmt.Fprintf(LogFile, "reject: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
 	cell := gd.Cells[i.GridIndex()]
 	switch cell.ValueStates[value] {
 	case MAYBE:
@@ -233,7 +238,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
 
 	copy.Assert(index, value, fmt.Sprintf("trying random guess of %d @ %s", value+1, index))
-	solved, _ := copy.Solve()
+	solved, err := copy.Solve()
 
 	if solved {
 
@@ -277,7 +282,7 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		// since asserting the value @ index produced a contradiction
 		// we can now reject the value
 
-		gd.Reject(index, value, fmt.Sprintf("rejecting guess of %d @ %s after brute force failure", value+1, index))
+		gd.Reject(index, value, fmt.Sprintf("rejecting guess of %d @ %s after brute force failure: %s", value+1, index, err))
 		return false, nil
 	}
 }
