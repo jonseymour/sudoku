@@ -91,6 +91,12 @@ pair in a new clone of the puzzle taken prior to the speculative fork. If this
 does not produce a contradiction, then the speculatively determined solution
 is not unique and therefore the original puzzle does not have a unique completion.
 
+##Coloring Conflict
+When a value is found that is restricted to a pair of cells within a group then if one cell contains the value, the other one must not and vice versa. We note this by coloring one cell with an 'on' color and the other cell with an 'off' color. Furthermore, if cells 'a' and 'b' are in coloring network and 'b' and 'c' are in a coloring network, then 'a', 'b' and 'c' must be in the same coloring network and 'a' and 'c' must be the same color.
+
+As each pair is discovered we create, extend or merge the coloring networks associated with each member of the pair and also extend the neighbourhood of each color. If we ever discover a non-empty intersection between the neighbourhoods of each color, then we can exclude the value from the cells in the intersection since
+a given cell can't simultaneously be both on and off.
+
 #BUILDING
 Install the golang tool chain for your host, then run:
 
@@ -113,6 +119,9 @@ A group is a collection of 9 cells organized as a either a row, column or a bloc
 Each cell intersects with 3 groups - the so-called 'intersecting groups' of the cell. Each cell has one intersecting group of each type: row, column and block.
 
 #REVISION HISTORY
+##1.2.1 - 11th October, 2015
+* extended with coloring support
+
 ##1.2 - 10th October, 2015
 * allow parser to accept puzzles using Royle's format.
 * fixed an error in backtracker which caused some contradictions to be missed
