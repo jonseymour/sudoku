@@ -20,10 +20,12 @@ type Grid struct {
 	Cells  [NUM_CELLS]*Cell
 	Values [GROUP_SIZE]*BitSet
 
-	id        int
-	clues     int
-	queue     [NUM_PRIORITIES][]func()
-	ambiguity error
+	id           int
+	clues        int
+	queue        [NUM_PRIORITIES][]func()
+	ambiguity    error
+	numColorings int
+	colorings    map[int]*Coloring
 }
 
 // Initialize a new grid. No clues are asserted.
@@ -43,6 +45,7 @@ func NewGrid() *Grid {
 
 	gridCount++
 	grid.id = gridCount
+	grid.colorings = map[int]*Coloring{}
 
 	allOnes := (&BitSet{}).Not()
 
@@ -98,6 +101,16 @@ func NewGrid() *Grid {
 // destination grid.
 func (gd *Grid) copyState(dest *Grid) {
 	dest.clues = gd.clues
+	dest.numColorings = gd.numColorings
+
+	for i, c := range gd.colorings {
+		dest.colorings[i] = &Coloring{
+			on:               c.on.Clone(),
+			off:              c.off.Clone(),
+			onNeighbourhood:  c.onNeighbourhood.Clone(),
+			offNeighbourhood: c.offNeighbourhood.Clone(),
+		}
+	}
 
 	for i, g := range gd.Groups {
 		for j, v := range g.Values {
@@ -113,6 +126,11 @@ func (gd *Grid) copyState(dest *Grid) {
 		cell.Bits = c.Bits
 		for v, s := range c.ValueStates {
 			cell.ValueStates[v] = s
+		}
+		for v, c := range c.Coloring {
+			if c != nil {
+				cell.Coloring[v] = dest.colorings[c.id]
+			}
 		}
 	}
 
@@ -139,8 +157,17 @@ func (gd *Grid) Enqueue(p Priority, f func()) {
 func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
 	for _, g := range cell.Groups {
 		g.Values[value].Clear(cell.GridIndex)
-		if g.Values[value].Size() == 1 {
+		switch g.Values[value].Size() {
+		case 1:
 			gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, value))
+		case 2:
+			indicies := g.Values[value].AsInts()
+			qg := g
+			gd.Enqueue(DEFERRED, func() {
+				if qg.Values[value].Size() == 2 {
+					gd.Color(gd.Cells[indicies[0]], gd.Cells[indicies[1]], value)
+				}
+			})
 		}
 	}
 
@@ -177,6 +204,12 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 		cell.Maybes = 1
 
 		gd.clues++
+		if cell.Coloring[value] != nil {
+			// we are finished with the coloring since
+			// processing of the pairs should clean the
+			// rest up.
+			gd.ResetColoring(cell.Coloring[value], value)
+		}
 
 		// available slots for all maybes in newly asserted cell are
 		// reduced by one in each intersecting group update those totals
@@ -284,6 +317,7 @@ func (gd *Grid) guess() (CellIndex, int) {
 func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
 
+	fmt.Fprintf(LogFile, "puzzle state: %s\n", gd)
 	copy.Assert(index, value, fmt.Sprintf("Speculative Assertion"))
 	solved, err := copy.Solve()
 

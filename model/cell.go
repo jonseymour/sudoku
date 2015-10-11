@@ -18,6 +18,7 @@ type Cell struct {
 	Value       *int
 	ValueStates [GROUP_SIZE]ValueState
 	Groups      [NUM_GROUP_TYPES]*Group
+	Coloring    [GROUP_SIZE]*Coloring
 }
 
 const (
