@@ -42,7 +42,9 @@ func init() {
 		decoding[c] = []int{b}
 		for i := 1; i < c; i++ {
 			hammingWeight[c+i] = hammingWeight[i] + 1
-			decoding[c+i] = append(decoding[i], b)
+			decoding[c+i] = make([]int, len(decoding[i])+1)
+			copy(decoding[c+i], decoding[i])
+			decoding[c+i][len(decoding[i])] = b
 		}
 		c <<= 1
 		b++
