@@ -7,6 +7,7 @@ import (
 	"github.com/jonseymour/sudoku/model"
 	"io"
 	"os"
+	"runtime/pprof"
 )
 
 const (
@@ -17,6 +18,8 @@ func main() {
 	var verbose = flag.Bool("verbose", false, "Set the verbosity of the logging")
 	var version = flag.Bool("version", false, "Report the version number")
 	var format = flag.String("format", "9.", "Output format. One of: 9., 90, 1., 10")
+	var cpuprofile = flag.Bool("cpuprofile", false, "Enable CPU profiling")
+
 	flag.Parse()
 
 	if *verbose {
@@ -27,10 +30,22 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s\n", VERSION)
 		os.Exit(0)
 	}
+	var err error
+
+	var f io.WriteCloser
+	if *cpuprofile {
+		if f, err = os.Create("sudoku.pprof"); err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
+		} else {
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
+			defer f.Close()
+		}
+	}
 
 	var solved = false
 	var w gridio.GridWriter
-	var err error
 	rdr := gridio.NewGridReader(os.Stdin)
 	w, err = gridio.NewGridWriter(os.Stdout, *format)
 	if err != nil {
