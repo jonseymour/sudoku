@@ -82,27 +82,30 @@ func (gd *Grid) Color(cell1 *Cell, cell2 *Cell, value int) {
 		gd.colorings[gd.id] = coloring
 		cell1.Coloring[value] = coloring
 		cell2.Coloring[value] = coloring
-		fmt.Fprintf(
-			LogFile,
-			"coloring: new coloring grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
-			gd.id,
-			coloring.id,
-			cell1.Index(),
-			cell2.Index(),
-			value+1)
-	} else if cell1.Coloring[value] == cell2.Coloring[value] {
-		coloring = cell1.Coloring[value]
-		if coloring.IsOn(cell1) == coloring.IsOn(cell2) {
-
+		if Verbose {
 			fmt.Fprintf(
 				LogFile,
-				"coloring: contradiction grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
+				"coloring: new coloring grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
 				gd.id,
 				coloring.id,
 				cell1.Index(),
 				cell2.Index(),
 				value+1)
+		}
+	} else if cell1.Coloring[value] == cell2.Coloring[value] {
+		coloring = cell1.Coloring[value]
+		if coloring.IsOn(cell1) == coloring.IsOn(cell2) {
 
+			if Verbose {
+				fmt.Fprintf(
+					LogFile,
+					"coloring: contradiction grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
+					gd.id,
+					coloring.id,
+					cell1.Index(),
+					cell2.Index(),
+					value+1)
+			}
 			panic("contradiction: Coloring inconsistency")
 		}
 
@@ -110,26 +113,30 @@ func (gd *Grid) Color(cell1 *Cell, cell2 *Cell, value int) {
 		coloring = cell2.Coloring[value]
 		color := !coloring.IsOn(cell2)
 		coloring.Set(cell1, color, value)
-		fmt.Fprintf(
-			LogFile,
-			"coloring: extension grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
-			gd.id,
-			coloring.id,
-			cell2.Index(),
-			cell1.Index(),
-			value+1)
+		if Verbose {
+			fmt.Fprintf(
+				LogFile,
+				"coloring: extension grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
+				gd.id,
+				coloring.id,
+				cell2.Index(),
+				cell1.Index(),
+				value+1)
+		}
 	} else if cell2.Coloring[value] == nil {
 		coloring = cell1.Coloring[value]
 		color := !coloring.IsOn(cell1)
 		coloring.Set(cell2, color, value)
-		fmt.Fprintf(
-			LogFile,
-			"coloring: extension grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
-			gd.id,
-			coloring.id,
-			cell1.Index(),
-			cell2.Index(),
-			value+1)
+		if Verbose {
+			fmt.Fprintf(
+				LogFile,
+				"coloring: extension grid=%d, coloring=%d, cell1=%s, cell2=%s, value=%d\n",
+				gd.id,
+				coloring.id,
+				cell1.Index(),
+				cell2.Index(),
+				value+1)
+		}
 	} else {
 		// merge the two colorings into a single coloring and ensure
 		// a consistent coloring is used for each
@@ -154,15 +161,17 @@ func (gd *Grid) Color(cell1 *Cell, cell2 *Cell, value int) {
 			gd.Cells[i].Coloring[value] = kept
 		}
 		delete(gd.colorings, discarded.id)
-		fmt.Fprintf(
-			LogFile,
-			"coloring: merge grid=%d, kept=%d, discarded=%d, cell1=%s, cell2=%s, value=%d\n",
-			gd.id,
-			kept.id,
-			discarded.id,
-			cell1.Index(),
-			cell2.Index(),
-			value+1)
+		if Verbose {
+			fmt.Fprintf(
+				LogFile,
+				"coloring: merge grid=%d, kept=%d, discarded=%d, cell1=%s, cell2=%s, value=%d\n",
+				gd.id,
+				kept.id,
+				discarded.id,
+				cell1.Index(),
+				cell2.Index(),
+				value+1)
+		}
 	}
 	intersection := coloring.offNeighbourhood.And(coloring.onNeighbourhood)
 	if intersection.Size() > 0 {

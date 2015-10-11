@@ -26,6 +26,7 @@ func main() {
 
 	if *verbose {
 		model.LogFile = os.Stderr
+		model.Verbose = *verbose
 	}
 
 	if *version {
@@ -65,6 +66,11 @@ func main() {
 
 		w.Write(grid)
 		w.Flush()
+	}
+
+	pprof.StopCPUProfile()
+	if f != nil {
+		f.Close()
 	}
 
 	if err != nil {

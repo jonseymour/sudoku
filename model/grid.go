@@ -193,7 +193,9 @@ func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
 // Assert that the grid contains the specified value at the specified index.
 // 'reason' contains an English language justification for the belief.
 func (gd *Grid) Assert(i CellIndex, value int, reason string) {
-	fmt.Fprintf(LogFile, "assert: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
+	if Verbose {
+		fmt.Fprintf(LogFile, "assert: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
+	}
 	cell := gd.Cells[i.GridIndex()]
 	if cell.Value != nil && *cell.Value != value {
 		panic(fmt.Errorf("Assertion Contradicted. New assertion %d conflicts with existing assertion %d in grid %d @ %s", value+1, *cell.Value+1, gd.id, i))
@@ -244,7 +246,9 @@ func (gd *Grid) Assert(i CellIndex, value int, reason string) {
 // Assert that the grid does not contain the specified value at the specified
 // cell index. 'reason' contains am English language justification for the belief.
 func (gd *Grid) Reject(i CellIndex, value int, reason string) {
-	fmt.Fprintf(LogFile, "reject: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
+	if Verbose {
+		fmt.Fprintf(LogFile, "reject: grid=%d, value=%d, cell=%s, reason=%s\n", gd.id, value+1, i, reason)
+	}
 	cell := gd.Cells[i.GridIndex()]
 	switch cell.ValueStates[value] {
 	case MAYBE:
@@ -320,7 +324,9 @@ func (gd *Grid) guess() (CellIndex, int) {
 func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 	copy := gd.Clone()
 
-	fmt.Fprintf(LogFile, "puzzle state: %s\n", gd)
+	if Verbose {
+		fmt.Fprintf(LogFile, "puzzle state: %s\n", gd)
+	}
 	copy.Assert(index, value, fmt.Sprintf("Speculative Assertion"))
 	solved, err := copy.Solve()
 
@@ -336,9 +342,11 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		alt.Reject(index, value, fmt.Sprintf("Verify Uniqueness"))
 		r2, _ := alt.Solve()
 		if r2 {
-			fmt.Fprintf(LogFile, "ambiguous (%d): %s\n", gd.id, gd)
-			fmt.Fprintf(LogFile, "solution 1 (%d): %s\n", copy.id, copy)
-			fmt.Fprintf(LogFile, "solution 2 (%d): %s\n", alt.id, alt)
+			if Verbose {
+				fmt.Fprintf(LogFile, "ambiguous (%d): %s\n", gd.id, gd)
+				fmt.Fprintf(LogFile, "solution 1 (%d): %s\n", copy.id, copy)
+				fmt.Fprintf(LogFile, "solution 2 (%d): %s\n", alt.id, alt)
+			}
 			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d (grid=%d), %d (grid=%d)", index, *copy.Cells[index.GridIndex()].Value+1, copy.id, *alt.Cells[index.GridIndex()].Value+1, alt.id)
 			return true, gd.ambiguity
 		} else if alt.ambiguity != nil {

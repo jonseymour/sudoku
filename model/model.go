@@ -8,6 +8,7 @@ import (
 type GroupType int
 
 var LogFile io.Writer = ioutil.Discard
+var Verbose bool = false
 
 const (
 	BLOCK_SIZE      = 3
