@@ -69,3 +69,13 @@ func (c *Cell) NumConstraints() int {
 	}
 	return count
 }
+
+// Answer the set of all cells in the intersecting units that can contain
+// the specified value, not including the cell itself.
+func (c *Cell) Neighbourhood(value int) *BitSet {
+	r := &BitSet{}
+	for _, g := range c.Groups {
+		r = r.Or(g.Values[value])
+	}
+	return r.Clear(c.GridIndex)
+}
