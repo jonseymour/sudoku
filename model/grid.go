@@ -53,6 +53,7 @@ func NewGrid() *Grid {
 	for x, _ := range grid.Groups {
 		g := &Group{}
 		grid.Groups[x] = g
+		g.Mask = &BitSet{}
 		for i, _ := range g.Counts {
 			g.Counts[i] = GROUP_SIZE
 			if x < GROUP_SIZE {
@@ -81,6 +82,10 @@ func NewGrid() *Grid {
 			cell.Groups[ROW].Cells[i.RowIndex()] = cell
 			cell.Groups[COLUMN].Cells[i.ColumnIndex()] = cell
 			cell.Groups[BLOCK].Cells[i.BlockIndex()] = cell
+
+			for _, g := range cell.Groups {
+				g.Mask.Set(cell.GridIndex)
+			}
 		}
 	}
 	return grid

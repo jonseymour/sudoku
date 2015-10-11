@@ -10,6 +10,7 @@ type Group struct {
 	Name   string
 	Counts [GROUP_SIZE]int
 	Cells  [GROUP_SIZE]*Cell
+	Mask   *BitSet
 
 	clues int
 }
