@@ -54,8 +54,8 @@ func NewGrid() *Grid {
 		g := &Group{}
 		grid.Groups[x] = g
 		g.Mask = &BitSet{}
-		for i, _ := range g.Counts {
-			g.Counts[i] = GROUP_SIZE
+		for i, _ := range g.Values {
+			g.Values[i] = &BitSet{}
 			if x < GROUP_SIZE {
 				g.Name = fmt.Sprintf("Row:%d", x+1)
 			} else if x < 2*GROUP_SIZE {
@@ -85,6 +85,9 @@ func NewGrid() *Grid {
 
 			for _, g := range cell.Groups {
 				g.Mask.Set(cell.GridIndex)
+				for v := 0; v < GROUP_SIZE; v++ {
+					g.Values[v].Set(cell.GridIndex)
+				}
 			}
 		}
 	}
@@ -97,8 +100,8 @@ func (gd *Grid) copyState(dest *Grid) {
 	dest.clues = gd.clues
 
 	for i, g := range gd.Groups {
-		for j, c := range g.Counts {
-			dest.Groups[i].Counts[j] = c
+		for j, v := range g.Values {
+			dest.Groups[i].Values[j] = v.Clone()
 		}
 		dest.Groups[i].clues = g.clues
 	}
@@ -135,17 +138,17 @@ func (gd *Grid) Enqueue(p Priority, f func()) {
 // cell by 1. If a count drops to 1, apply the unique in group heuristic.
 func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
 	for _, g := range cell.Groups {
-		g.Counts[value] -= 1
-		if g.Counts[value] == 1 {
+		g.Values[value].Clear(cell.GridIndex)
+		if g.Values[value].Size() == 1 {
 			gd.Enqueue(DEFERRED, gd.heuristicUniqueInGroup(g, value))
 		}
 	}
 
 	f := func(g1 *Group, g2 *Group) {
-		c := g1.Counts[value]
+		c := g1.Values[value].Size()
 		switch c {
 		case 2, 3:
-			if g2.Counts[value] > c {
+			if g2.Values[value].Size() > c {
 				gd.Enqueue(DEFERRED, gd.heuristicExcludeComplement(g1, g2, value, c))
 			}
 		}

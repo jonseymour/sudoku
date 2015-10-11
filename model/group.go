@@ -8,7 +8,7 @@ const (
 
 type Group struct {
 	Name   string
-	Counts [GROUP_SIZE]int
+	Values [GROUP_SIZE]*BitSet
 	Cells  [GROUP_SIZE]*Cell
 	Mask   *BitSet
 
