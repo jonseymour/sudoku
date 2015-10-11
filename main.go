@@ -20,6 +20,8 @@ func main() {
 	var format = flag.String("format", "9.", "Output format. One of: 9., 90, 1., 10")
 	var cpuprofile = flag.Bool("cpuprofile", false, "Enable CPU profiling")
 
+	flag.BoolVar(&model.ColoringDisabled, "no-coloring", false, "Disable coloring")
+
 	flag.Parse()
 
 	if *verbose {

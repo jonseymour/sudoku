@@ -11,7 +11,10 @@ const (
 	DEFERRED
 )
 
-var gridCount int
+var (
+	gridCount        int
+	ColoringDisabled bool
+)
 
 // A grid consists of cells and groups and state that tracks the number
 // of asserted clues and a queue of pending heuristics.
@@ -164,7 +167,7 @@ func (gd *Grid) adjustValueCounts(cell *Cell, value int) {
 			indicies := g.Values[value].AsInts()
 			qg := g
 			gd.Enqueue(DEFERRED, func() {
-				if qg.Values[value].Size() == 2 {
+				if qg.Values[value].Size() == 2 && !ColoringDisabled {
 					gd.Color(gd.Cells[indicies[0]], gd.Cells[indicies[1]], value)
 				}
 			})
