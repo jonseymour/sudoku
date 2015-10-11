@@ -338,23 +338,25 @@ func (gd *Grid) speculate(index CellIndex, value int) (bool, error) {
 		// by rejecting the value at the cell and trying to solve
 		// the resulting grid.
 
-		alt := gd.Clone()
-		alt.Reject(index, value, fmt.Sprintf("Verify Uniqueness"))
-		r2, _ := alt.Solve()
-		if r2 {
-			if Verbose {
-				fmt.Fprintf(LogFile, "ambiguous (%d): %s\n", gd.id, gd)
-				fmt.Fprintf(LogFile, "solution 1 (%d): %s\n", copy.id, copy)
-				fmt.Fprintf(LogFile, "solution 2 (%d): %s\n", alt.id, alt)
+		if VerifyUniqueness {
+			alt := gd.Clone()
+			alt.Reject(index, value, fmt.Sprintf("Verify Uniqueness"))
+			r2, _ := alt.Solve()
+			if r2 {
+				if Verbose {
+					fmt.Fprintf(LogFile, "ambiguous (%d): %s\n", gd.id, gd)
+					fmt.Fprintf(LogFile, "solution 1 (%d): %s\n", copy.id, copy)
+					fmt.Fprintf(LogFile, "solution 2 (%d): %s\n", alt.id, alt)
+				}
+				gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d (grid=%d), %d (grid=%d)", index, *copy.Cells[index.GridIndex()].Value+1, copy.id, *alt.Cells[index.GridIndex()].Value+1, alt.id)
+				return true, gd.ambiguity
+			} else if alt.ambiguity != nil {
+				// if the modified grid failed because of an ambiguity, then
+				// there are multiple solutions in addition to the one we found
+				// which implies that the solution is not unique
+				gd.ambiguity = alt.ambiguity
+				return true, gd.ambiguity
 			}
-			gd.ambiguity = fmt.Errorf("ambiguity @ %s - both values yield valid solutions - %d (grid=%d), %d (grid=%d)", index, *copy.Cells[index.GridIndex()].Value+1, copy.id, *alt.Cells[index.GridIndex()].Value+1, alt.id)
-			return true, gd.ambiguity
-		} else if alt.ambiguity != nil {
-			// if the modified grid failed because of an ambiguity, then
-			// there are multiple solutions in addition to the one we found
-			// which implies that the solution is not unique
-			gd.ambiguity = alt.ambiguity
-			return true, gd.ambiguity
 		}
 
 		// the solution in copy is unique, so update gd with copy and indicate

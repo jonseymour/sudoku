@@ -9,6 +9,7 @@ type GroupType int
 
 var LogFile io.Writer = ioutil.Discard
 var Verbose bool = false
+var VerifyUniqueness bool = true
 
 const (
 	BLOCK_SIZE      = 3

@@ -19,6 +19,7 @@ func main() {
 	var version = flag.Bool("version", false, "Report the version number")
 	var format = flag.String("format", "9.", "Output format. One of: 9., 90, 1., 10")
 	var cpuprofile = flag.Bool("cpuprofile", false, "Enable CPU profiling")
+	var noverify = flag.Bool("no-verify-uniqueness", false, "Disable uniqueness check")
 
 	flag.BoolVar(&model.ColoringDisabled, "no-coloring", false, "Disable coloring")
 
@@ -33,6 +34,9 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s\n", VERSION)
 		os.Exit(0)
 	}
+
+	model.VerifyUniqueness = !*noverify
+
 	var err error
 
 	var f io.WriteCloser
