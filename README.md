@@ -77,12 +77,12 @@ This heuristic is known in other places as Pointed Pairs/Triples or Block/Line R
 
 ##Speculative Assertion
 When we run out of other heuristics to try, we clone the current state of the
-solution and speculatively assert one of the possible cell/value pairs and see
+solution and speculatively assert one of the possible candidates pairs and see
 what happens.
 
 ##Contradiction Found
-If a speculative assertion produced a contradiction, then we reject the cell/value
-pair that was the subject of the speculative assertion in the original solution.
+If a speculative assertion produced a contradiction, then we reject the candidate
+that was the subject of the speculative assertion in the original solution.
 
 ##Verify Uniqueness
 If a speculative assertion finds a solution, we need to verify that the solution
@@ -92,13 +92,15 @@ does not produce a contradiction, then the speculatively determined solution
 is not unique and therefore the original puzzle does not have a unique completion.
 
 ##Coloring Conflict
-When a value is found that is restricted to a pair of cells within a group then if one cell contains the value, the other one must not and vice versa. We note this by coloring one cell with an 'on' color and the other cell with an 'off' color. Furthermore, if cells 'a' and 'b' are a pair in the same coloring network and 'b' and 'c' are a pair in the same coloring network, then all of 'a', 'b' and 'c' must be in the same coloring network and cells 'a' and 'c' must be of the same color.
+When a value is found that is restricted to a pair of cells within a group then if one cell contains the value, the other one must not and vice versa. We note this by coloring one cell with an 'on' color and the other cell with an 'off' color. Furthermore, if cells 'a' and 'b' are a pair in a coloring network and 'b' and 'c' are a pair in a coloring network, then all of 'a', 'b' and 'c' must be in the same coloring network and cells 'a' and 'c' must be of the same color.
 
-Each coloring network has two sets - an 'on' and and 'off' set. The 'on' set consists of those cells that are colored 'on' by the network, the 'off' set consists of the other cells which, by definition, are colored 'off'.
+Each coloring network has two color sets - an 'on' and and 'off' set. The 'on' set consists of those cells that are colored 'on' by the network, the 'off' set consists of the other cells which are colored 'off'.
 
-Each coloring network also has a two sets of neighbours - one for each color. These neighbours are cells that may contain the same value as the coloring network and intersect with groups that intersect with cells that are in the coloring network.
+Each color set also has a neighbourhood set which consists of cells that are in the same groups as cells in the color set. The neighbourhood sets and color sets
+of a coloring network are all mutually disjoint.
 
-As each group restricted pair of cells is discovered we create, extend or merge the coloring networks associated with each member of the pair and also extend the neighbourhood of each color (for that coloring network). If we ever discover a non-empty intersection between the neighbourhoods of each color, then we can exclude the value from the cells in the intersection since a given cell can't simultaneously be both on and off.
+As each group restricted pair of cells is discovered we create, extend or merge the coloring networks associated with each member of the pair and also extend the neighbourhood of each color (for that coloring network). If we ever discover a non-empty intersection between the neighbourhoods of each color, then we can exclude the value from the cells in the intersection since a given cell in a coloring network can't simultaneously be colored both 'on' and 'off' and the only way to avoid this contradiction is if cells in the intersection cannot contain
+the value.
 
 #BUILDING
 Install the golang tool chain for your host, then run:
@@ -118,6 +120,13 @@ A vertical group of 3 cells. Columns are numbered 1-9 from left to right.
 A group of 9 cells arranged in a 3x3 grid, aligned on boundaries that are multiples of 3 + 1. Blocks are numbered 1-9 from top-left to bottom-right.
 ##Group
 A group is a collection of 9 cells organized as a either a row, column or a block.
+
+Note: other places use the term 'unit' where this documentation uses the term 'group'.
+
+##Candidate
+A pair of cell and value for that cell that has not yet been eliminated from the
+solution.
+
 ##Intersecting Group
 Each cell intersects with 3 groups - the so-called 'intersecting groups' of the cell. Each cell has one intersecting group of each type: row, column and block.
 
@@ -147,7 +156,7 @@ Each cell intersects with 3 groups - the so-called 'intersecting groups' of the 
 
 #REFERENCES
 
-* [1] "Minimal Sudoku" - http://staffhome.ecm.uwa.edu.au/~00013890/sudokumin.php
+* [1] "Minimum Sudoku" - http://staffhome.ecm.uwa.edu.au/~00013890/sudokumin.php
 * [2] "Sudoku" - http://mathworld.wolfram.com/Sudoku.html
 * [3] "Sudoku" - https://en.wikipedia.org/wiki/Sudoku
 * [4] www.sudoku.com - http://www.sudoku.com/
