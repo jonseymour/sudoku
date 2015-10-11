@@ -74,9 +74,9 @@ func (gd *Grid) Color(cell1 *Cell, cell2 *Cell, value int) {
 		coloring = &Coloring{
 			id:               gd.numColorings,
 			on:               on,
-			onNeighbourhood:  cell1.Neighbourhood(value).AndNot(off),
+			onNeighbourhood:  cell1.Neighbourhood(value).AndNot(off).AndNot(on),
 			off:              off,
-			offNeighbourhood: cell2.Neighbourhood(value).AndNot(on),
+			offNeighbourhood: cell2.Neighbourhood(value).AndNot(on).AndNot(off),
 		}
 		gd.numColorings++
 		gd.colorings[gd.id] = coloring
