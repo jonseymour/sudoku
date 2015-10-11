@@ -32,9 +32,11 @@ func (c *Coloring) Set(cell *Cell, on bool, value int) {
 	if on {
 		c.on.Set(cell.GridIndex)
 		c.onNeighbourhood = c.onNeighbourhood.Or(cell.Neighbourhood(value))
+		c.offNeighbourhood.Clear(cell.GridIndex)
 	} else {
 		c.off.Set(cell.GridIndex)
 		c.offNeighbourhood = c.offNeighbourhood.Or(cell.Neighbourhood(value))
+		c.onNeighbourhood.Clear(cell.GridIndex)
 	}
 	cell.Coloring[value] = c
 }
@@ -52,6 +54,8 @@ func (gd *Grid) ResetColoring(c *Coloring, value int) {
 func (gd *Grid) RemoveColoring(c *Coloring, cell *Cell, value int) {
 	c.on.Clear(cell.GridIndex)
 	c.off.Clear(cell.GridIndex)
+	c.onNeighbourhood.Clear(cell.GridIndex)
+	c.offNeighbourhood.Clear(cell.GridIndex)
 	cell.Coloring[value] = nil
 	gd.Enqueue(IMMEDIATE, func() {
 		gd.Reject(cell.Index(), value, fmt.Sprintf("Coloring conflict: coloring=%d", c.id))
@@ -134,14 +138,14 @@ func (gd *Grid) Color(cell1 *Cell, cell2 *Cell, value int) {
 		coloring = kept
 		if kept.IsOn(cell1) == discarded.IsOn(cell2) {
 			kept.on = kept.on.Or(discarded.off)
-			kept.onNeighbourhood = kept.onNeighbourhood.Or(discarded.offNeighbourhood)
+			kept.onNeighbourhood = kept.onNeighbourhood.Or(discarded.offNeighbourhood).AndNot(discarded.on)
 			kept.off = kept.off.Or(discarded.on)
-			kept.offNeighbourhood = kept.offNeighbourhood.Or(discarded.onNeighbourhood)
+			kept.offNeighbourhood = kept.offNeighbourhood.Or(discarded.onNeighbourhood).AndNot(discarded.off)
 		} else {
 			kept.on = kept.on.Or(discarded.on)
-			kept.onNeighbourhood = kept.onNeighbourhood.Or(discarded.onNeighbourhood)
+			kept.onNeighbourhood = kept.onNeighbourhood.Or(discarded.onNeighbourhood).AndNot(discarded.off)
 			kept.off = kept.off.Or(discarded.off)
-			kept.offNeighbourhood = kept.offNeighbourhood.Or(discarded.offNeighbourhood)
+			kept.offNeighbourhood = kept.offNeighbourhood.Or(discarded.offNeighbourhood).AndNot(discarded.on)
 		}
 		for _, i := range discarded.on.AsInts() {
 			gd.Cells[i].Coloring[value] = kept

@@ -92,10 +92,13 @@ does not produce a contradiction, then the speculatively determined solution
 is not unique and therefore the original puzzle does not have a unique completion.
 
 ##Coloring Conflict
-When a value is found that is restricted to a pair of cells within a group then if one cell contains the value, the other one must not and vice versa. We note this by coloring one cell with an 'on' color and the other cell with an 'off' color. Furthermore, if cells 'a' and 'b' are in coloring network and 'b' and 'c' are in a coloring network, then 'a', 'b' and 'c' must be in the same coloring network and 'a' and 'c' must be the same color.
+When a value is found that is restricted to a pair of cells within a group then if one cell contains the value, the other one must not and vice versa. We note this by coloring one cell with an 'on' color and the other cell with an 'off' color. Furthermore, if cells 'a' and 'b' are a pair in the same coloring network and 'b' and 'c' are a pair in the same coloring network, then all of 'a', 'b' and 'c' must be in the same coloring network and cells 'a' and 'c' must be of the same color.
 
-As each pair is discovered we create, extend or merge the coloring networks associated with each member of the pair and also extend the neighbourhood of each color. If we ever discover a non-empty intersection between the neighbourhoods of each color, then we can exclude the value from the cells in the intersection since
-a given cell can't simultaneously be both on and off.
+Each coloring network has two sets - an 'on' and and 'off' set. The 'on' set consists of those cells that are colored 'on' by the network, the 'off' set consists of the other cells which, by definition, are colored 'off'.
+
+Each coloring network also has a two sets of neighbours - one for each color. These neighbours are cells that may contain the same value as the coloring network and intersect with groups that intersect with cells that are in the coloring network.
+
+As each group restricted pair of cells is discovered we create, extend or merge the coloring networks associated with each member of the pair and also extend the neighbourhood of each color (for that coloring network). If we ever discover a non-empty intersection between the neighbourhoods of each color, then we can exclude the value from the cells in the intersection since a given cell can't simultaneously be both on and off.
 
 #BUILDING
 Install the golang tool chain for your host, then run:
