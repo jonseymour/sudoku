@@ -18,6 +18,7 @@ var gridCount int
 type Grid struct {
 	Groups [NUM_GROUPS]*Group
 	Cells  [NUM_CELLS]*Cell
+	Values [GROUP_SIZE]*BitSet
 
 	id        int
 	clues     int
@@ -39,8 +40,16 @@ func NewGrid() *Grid {
 			[]func(){},
 		},
 	}
+
 	gridCount++
 	grid.id = gridCount
+
+	allOnes := (&BitSet{}).Not()
+
+	for x, _ := range grid.Values {
+		grid.Values[x] = allOnes.Clone()
+	}
+
 	for x, _ := range grid.Groups {
 		g := &Group{}
 		grid.Groups[x] = g
@@ -77,6 +86,8 @@ func NewGrid() *Grid {
 	return grid
 }
 
+// copy the state of the receiver to the specified
+// destination grid.
 func (gd *Grid) copyState(dest *Grid) {
 	dest.clues = gd.clues
 
@@ -95,6 +106,10 @@ func (gd *Grid) copyState(dest *Grid) {
 		for v, s := range c.ValueStates {
 			cell.ValueStates[v] = s
 		}
+	}
+
+	for i, v := range gd.Values {
+		dest.Values[i] = v.Clone()
 	}
 }
 
@@ -193,6 +208,8 @@ func (gd *Grid) Reject(i CellIndex, value int, reason string) {
 		cell.ValueStates[value] = NO
 		cell.Bits &^= bit
 		cell.Maybes -= 1
+
+		gd.Values[value].Clear(cell.GridIndex)
 
 		gd.adjustValueCounts(cell, value)
 
