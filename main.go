@@ -20,6 +20,7 @@ func main() {
 	var format = flag.String("format", "9.", "Output format. One of: 9., 90, 1., 10")
 	var cpuprofile = flag.Bool("cpuprofile", false, "Enable CPU profiling")
 	var noverify = flag.Bool("no-verify-uniqueness", false, "Disable uniqueness check")
+	var nosolve = flag.Bool("no-solve", false, "Disable solver - reformatting only.")
 
 	flag.BoolVar(&model.ColoringDisabled, "no-coloring", false, "Disable coloring.")
 	flag.BoolVar(&model.NoBacktracking, "no-backtracking", false, "Disable backtracking.")
@@ -66,10 +67,13 @@ func main() {
 	for grid, err = rdr.Read(); grid != nil && err == nil; grid, err = rdr.Read() {
 
 		orig := grid.Clone()
-		if solved, err = grid.Solve(); err != nil {
-			fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", rdr.ReadCount(), err)
-		} else if !solved {
-			fmt.Fprintf(os.Stderr, "failed to solve: %s\n", orig)
+
+		if !*nosolve {
+			if solved, err = grid.Solve(); err != nil {
+				fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", rdr.ReadCount(), err)
+			} else if !solved {
+				fmt.Fprintf(os.Stderr, "failed to solve: %s\n", orig)
+			}
 		}
 
 		w.Write(grid)
