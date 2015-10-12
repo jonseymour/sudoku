@@ -21,7 +21,8 @@ func main() {
 	var cpuprofile = flag.Bool("cpuprofile", false, "Enable CPU profiling")
 	var noverify = flag.Bool("no-verify-uniqueness", false, "Disable uniqueness check")
 
-	flag.BoolVar(&model.ColoringDisabled, "no-coloring", false, "Disable coloring")
+	flag.BoolVar(&model.ColoringDisabled, "no-coloring", false, "Disable coloring.")
+	flag.BoolVar(&model.NoBacktracking, "no-backtracking", false, "Disable backtracking.")
 
 	flag.Parse()
 
@@ -64,8 +65,11 @@ func main() {
 
 	for grid, err = rdr.Read(); grid != nil && err == nil; grid, err = rdr.Read() {
 
+		orig := grid.Clone()
 		if solved, err = grid.Solve(); err != nil {
 			fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", rdr.ReadCount(), err)
+		} else if !solved {
+			fmt.Fprintf(os.Stderr, "failed to solve: %s\n", orig)
 		}
 
 		w.Write(grid)
@@ -77,14 +81,14 @@ func main() {
 		f.Close()
 	}
 
-	if err != nil {
+	if err == nil || err == io.EOF {
 		if solved {
 			os.Exit(0)
 		} else {
-			if err != io.EOF {
-				fmt.Fprintf(os.Stderr, "read error: %s\n", err)
-			}
 			os.Exit(1)
 		}
+	} else {
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
 }

@@ -428,6 +428,11 @@ func (gd *Grid) Solve() (bool, error) {
 				// there are no more heuristics available.
 				// guess a cell value, and test whether this
 				// produces a unique solution.
+				if NoBacktracking {
+					result <- nil
+					return
+				}
+
 				done, err := gd.speculate(gd.guess())
 				if done {
 					result <- err
