@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"time"
 )
 
 type Priority int
@@ -29,6 +30,7 @@ type Grid struct {
 	ambiguity    error
 	numColorings int
 	colorings    map[int]*Coloring
+	duration     time.Duration
 }
 
 // Initialize a new grid. No clues are asserted.
@@ -396,11 +398,13 @@ func (gd *Grid) Solve() (bool, error) {
 	result := make(chan error)
 
 	go func() {
+		started := time.Now()
 
 		defer func() {
 			if r := recover(); r != nil {
 				result <- fmt.Errorf("%v", r)
 			}
+			gd.duration = time.Now().Sub(started)
 		}()
 
 	mainloop:
@@ -459,4 +463,8 @@ func (gd *Grid) String() string {
 		}
 	}
 	return string(result[0:])
+}
+
+func (gd *Grid) Duration() time.Duration {
+	return gd.duration
 }

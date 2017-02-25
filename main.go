@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"runtime/pprof"
+	"time"
 )
 
 const (
@@ -21,6 +22,7 @@ func main() {
 	var cpuprofile = flag.Bool("cpuprofile", false, "Enable CPU profiling")
 	var noverify = flag.Bool("no-verify-uniqueness", false, "Disable uniqueness check")
 	var nosolve = flag.Bool("no-solve", false, "Disable solver - reformatting only.")
+	var timings = flag.Bool("timings", false, "Enable timings.")
 
 	flag.BoolVar(&model.ColoringDisabled, "no-coloring", false, "Disable coloring.")
 	flag.BoolVar(&model.NoBacktracking, "no-backtracking", false, "Disable backtracking.")
@@ -73,6 +75,9 @@ func main() {
 				fmt.Fprintf(os.Stderr, "invalid puzzle: %d: %v\n", rdr.ReadCount(), err)
 			} else if !solved {
 				fmt.Fprintf(os.Stderr, "failed to solve: %s\n", orig)
+			}
+			if *timings {
+				fmt.Fprintf(os.Stderr, "timing: %s, %d\n", orig, grid.Duration()/time.Microsecond)
 			}
 		}
 
